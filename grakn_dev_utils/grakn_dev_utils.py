@@ -1,5 +1,5 @@
 from grakn.client import *
-from setuptools import pkg_resources
+import pkg_resources
 
 def init_db(database, gql_schema=None, gql_data=None, host="localhost", port="1729"):
     '''
