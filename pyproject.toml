@@ -23,11 +23,11 @@ keywords = ['grakn', 'database', 'API']
 
 packages = [
     { include = "grakn_dev_utils/*.py" },
-    { include = "grakn_dev_utils/data/*", format = "wheel" },
 ]
 
 include = [
     { path = "tests", format = "sdist" },
+    { path = "grakn_dev_utils/data/*", format = "wheel" },
 ]
 
 [tool.poetry.dependencies]
