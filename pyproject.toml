@@ -1,0 +1,56 @@
+[tool.poetry]
+name = "new_package"
+version = "0.1.0"
+description = "description of new_package"
+
+license = "MIT"
+
+authors = [
+    "Jon Thompson <jjt3f2188@gmail.com>"
+]
+
+maintainers = [
+    "Jon Thompson <jjt3f2188@gmail.com>"
+]
+
+readme = 'README.md'  # Markdown files are supported
+
+repository = "NEW_PACKAGE_GIT_REPO_URL"
+homepage = "NEW_PACKAGE_WEBSITE_URL"
+
+keywords = ['keyword1']
+
+packages = [
+    { include = "new_package/*.py" },
+    { include = "new_package/data/*", format = "wheel" },
+]
+
+include = [
+    { path = "tests", format = "sdist" },
+]
+
+[tool.poetry.dependencies]
+python = "^3.7"  # Compatible python versions must be declared here
+toml = "^0.9"
+# Dependencies with extras
+# requests = { version = "^2.13", extras = [ "security" ] }
+# grakn-client = {version = "~2.0.0a6"}
+# Python specific dependencies with prereleases allowed
+# pathlib2 = { version = "^2.2", python = "~2.7", allow-prereleases = true }
+# Git dependencies
+# cleo = { git = "https://github.com/sdispater/cleo.git", branch = "master" }
+
+# Optional dependencies (extras)
+# pendulum = { version = "^1.4", optional = true }
+
+[tool.poetry.dev-dependencies]
+pytest = "^3.0"
+pytest-cov = "^2.4"
+setuptools = "~53.0.0"
+
+[tool.poetry.scripts]
+# my-script = 'new_package:main>'
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
