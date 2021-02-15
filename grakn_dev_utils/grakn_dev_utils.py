@@ -16,7 +16,7 @@ def init_db(database, gql_schema=None, gql_data=None, host="localhost", port="17
         with client.session(database, SessionType.SCHEMA) as session:
             if gql_schema is None: 
                 # use packaged data
-                f = pkg_resources.resource_stream(__name__, 'data/tenancy_schema.gql')
+                f = pkg_resources.resource_stream(__name__, 'data/tenancy_schema.gql').read()
             else:
                 f = open(gql_schema, "r")#
             k=1
@@ -33,7 +33,7 @@ def init_db(database, gql_schema=None, gql_data=None, host="localhost", port="17
             with session.transaction(TransactionType.WRITE) as write_transaction:
                 if gql_data is None:
                     # use packaged data
-                    f = pkg_resources.resource_stream(__name__, 'data/tenancy_data.gql')
+                    f = pkg_resources.resource_stream(__name__, 'data/tenancy_data.gql').read()
                 else:
                     f = open(gql_schema, "r")#
                 for line in f.readlines():
