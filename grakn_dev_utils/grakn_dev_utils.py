@@ -1,7 +1,7 @@
 from grakn.client import *
+from setuptools import pkg_resources
 
-
-def init_db(database, gql_schema, gql_data, host="localhost", port="1729"):
+def init_db(database, gql_schema=None, gql_data=None, host="localhost", port="1729"):
     '''
     @param database: the database to intialise, string
     @param gql_schema: path to schema, string
@@ -9,10 +9,16 @@ def init_db(database, gql_schema, gql_data, host="localhost", port="1729"):
     @param host, the host, string
     @param port, the port, string
     '''
+
+    
     with GraknClient.core(host+":"+port) as client:
         client.databases().create(database)
         with client.session(database, SessionType.SCHEMA) as session:
-            f = open(gql_schema, "r")#
+            if gql_schema is None: 
+                # use packaged data
+                f = pkg_resources.resource_stream(__name__, 'data/tenancy_schema.gql')
+            else:
+                f = open(gql_schema, "r")#
             k=1
             for line in f.readlines():
                 with session.transaction(TransactionType.WRITE) as write_transaction:
@@ -25,7 +31,11 @@ def init_db(database, gql_schema, gql_data, host="localhost", port="1729"):
                 
         with client.session(database, SessionType.DATA) as session:
             with session.transaction(TransactionType.WRITE) as write_transaction:
-                f = open(gql_data, "r")#
+                if gql_data is None:
+                    # use packaged data
+                    f = pkg_resources.resource_stream(__name__, 'data/tenancy_data.gql')
+                else:
+                    f = open(gql_schema, "r")#
                 for line in f.readlines():
                     print("")
                     print(line)
