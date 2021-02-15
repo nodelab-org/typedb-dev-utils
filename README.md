@@ -10,6 +10,12 @@ References:
 
 ## quick start
 
+install poetry
+
+```
+pip install poetry
+```
+
 ```
 git clone https://github.com/JonThom/py-poetry-package-template.git
 cd py-poetry-package-template
