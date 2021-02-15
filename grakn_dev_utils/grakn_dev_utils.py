@@ -15,35 +15,30 @@ def init_db(database, gql_schema=None, gql_data=None, host="localhost", port="17
         client.databases().create(database)
         with client.session(database, SessionType.SCHEMA) as session:
             if gql_schema is None: 
+                gql_schema = pkg_resources.get_resource_filename(__name__, 'data/tenancy_schema.gql')
                 # use packaged data
-                f = pkg_resources.resource_stream(__name__, 'data/tenancy_schema.gql').read()
-            else:
-                f = open(gql_schema, "r")#
-            k=1
+                #f = pkg_resources.resource_stream(__name__, 'data/tenancy_schema.gql').read()
+            #else:
+            f = open(gql_schema, "r")#
             for line in f.readlines():
                 with session.transaction(TransactionType.WRITE) as write_transaction:
-                    # print("")
-                    # print(line)
                     if all([token in line for token in ["define","sub",";"]]):
                         write_transaction.query().define(line)
                         write_transaction.commit()
-                    k+=1
                 
         with client.session(database, SessionType.DATA) as session:
             with session.transaction(TransactionType.WRITE) as write_transaction:
                 if gql_data is None:
                     # use packaged data
-                    f = pkg_resources.resource_stream(__name__, 'data/tenancy_data.gql').read()
-                else:
-                    f = open(gql_schema, "r")#
+                    gql_data=pkg_resources.get_resource_filename(__name__, 'data/tenancy_data.gql')
+                #    f = pkg_resources.resource_stream(__name__, 'data/tenancy_data.gql').read()
+                #else:
+                f = open(gql_data, "r")#
                 for line in f.readlines():
-                    print("")
-                    print(line)
                     with session.transaction(TransactionType.WRITE) as write_transaction:
                         if all([token in line for token in ["insert",";"]]):
                             write_transaction.query().insert(line)
                             write_transaction.commit()
-                        k+=1
 
         print("databases: {}".format(client.databases().all()))
 
