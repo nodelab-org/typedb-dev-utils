@@ -18,9 +18,8 @@ python -m pip install git+https://github.com/JonThom/grakn_dev_utils
 with pipenv:
 
 ```
-pipenv install -e git+https://github.com/JonThom/grakn_dev_utils#egg=grakn_dev_utils
+pipenv install git+https://github.com/JonThom/grakn_dev_utils#egg=grakn_dev_utils
 ```
-(The -e argument, for editable, is required for Pipenv to do sub-dependency resolution.)
 
 ### run
 
