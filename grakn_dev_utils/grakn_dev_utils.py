@@ -1,6 +1,6 @@
 from grakn.client import *
 
-def init(database, gql_schema, gql_data, host="localhost", port="1729"):
+def init_db(database, gql_schema, gql_data, host="localhost", port="1729"):
     with GraknClient.core(host+":"+port) as client:
         client.databases().create(database)
         with client.session(database, SessionType.SCHEMA) as session:
@@ -30,7 +30,7 @@ def init(database, gql_schema, gql_data, host="localhost", port="1729"):
         print("databases: {}".format(client.databases().all()))
 
 
-def del(database, host="localhost", port="1729"):
+def del_db(database, host="localhost", port="1729"):
     with GraknClient.core(host+":"+port) as client:
         client.databases().delete(database)
 
