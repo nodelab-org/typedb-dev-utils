@@ -1,31 +1,43 @@
-# py-poetry-package-template
+# grakn_dev_utils
 
-Template for a python package that bundles dependencies using poetry (https://python-poetry.org/)
-In addition to the standard initial poetry project template, includes
-* `/new_package/data` directory, which can be included in sdist and/or wheel using the `include` key in `pyproject.tml` and the last line of `Distribution / packaging` in `.gitignore`
+A library of tools to speed up grakn development with the grakn python API:
+* initialise and delete test databases
+* define a new AttributeType and its owners, or a new RelationType and its role players 
+* modify data in a database with a custom function (e.g. add a unique ID)
 
-References:
-* [Can not exclude package data file only for the wheel #3380](https://github.com/python-poetry/poetry/issues/3380)
-* [example pyproject.toml](https://github.com/zoj613/htnorm/blob/main/pyproject.toml)
+## Quickstart
 
-## quick start
+### install
 
-install poetry
-
-```
-pip install poetry
-```
+with pip:
 
 ```
-git clone https://github.com/JonThom/py-poetry-package-template.git
-cd py-poetry-package-template
+python -m pip install git+https://github.com/JonThom/grakn_dev_utils
 ```
 
-create a virtual environment
+with pipenv:
 
 ```
-python3 -m venv .venv
+pipenv install -e git+https://github.com/JonThom/grakn_dev_utils#egg=grakn_dev_utils
+```
+(The -e argument, for editable, is required for Pipenv to do sub-dependency resolution.)
+
+### run
+
+first, make sure grakn 2.0 is installed and running. 
+
+```
+import grakn_dev_utils as gradevils
 ```
 
-from there on, follow the [poetry docs](https://python-poetry.org/docs/)
+initialise a database with default toy schema and data
 
+```
+gradevils.init("test")
+```
+
+delete a database
+
+```
+gradevils.del("test")
+```
