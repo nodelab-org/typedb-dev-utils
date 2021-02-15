@@ -33,11 +33,11 @@ import grakn_dev_utils as gradevils
 initialise a database with default toy schema and data
 
 ```
-gradevils.init("test")
+gradevils.init_db("test")
 ```
 
 delete a database
 
 ```
-gradevils.del("test")
+gradevils.del_db("test")
 ```
