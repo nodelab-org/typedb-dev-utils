@@ -1,7 +1,7 @@
 from grakn.client import *
-import pkg_resources
+# import pkg_resources
 
-def init_db(database, gql_schema=None, gql_data=None, host="localhost", port="1729"):
+def init_db(database, gql_schema, gql_data, host="localhost", port="1729"):
     '''
     @param database: the database to intialise, string
     @param gql_schema: path to schema, string
@@ -14,8 +14,8 @@ def init_db(database, gql_schema=None, gql_data=None, host="localhost", port="17
     with GraknClient.core(host+":"+port) as client:
         client.databases().create(database)
         with client.session(database, SessionType.SCHEMA) as session:
-            if gql_schema is None: 
-                gql_schema = pkg_resources.get_resource_filename(__name__, 'data/tenancy_schema.gql')
+            #if gql_schema is None: 
+                #gql_schema = pkg_resources.get_resource_filename(__name__, 'data/tenancy_schema.gql')
                 # use packaged data
                 #f = pkg_resources.resource_stream(__name__, 'data/tenancy_schema.gql').read()
             #else:
@@ -28,9 +28,9 @@ def init_db(database, gql_schema=None, gql_data=None, host="localhost", port="17
                 
         with client.session(database, SessionType.DATA) as session:
             with session.transaction(TransactionType.WRITE) as write_transaction:
-                if gql_data is None:
+                #if gql_data is None:
                     # use packaged data
-                    gql_data=pkg_resources.get_resource_filename(__name__, 'data/tenancy_data.gql')
+                #    gql_data=pkg_resources.get_resource_filename(__name__, 'data/tenancy_data.gql')
                 #    f = pkg_resources.resource_stream(__name__, 'data/tenancy_data.gql').read()
                 #else:
                 f = open(gql_data, "r")#
