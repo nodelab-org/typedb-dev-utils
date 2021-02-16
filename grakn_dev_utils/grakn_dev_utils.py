@@ -1,4 +1,20 @@
 from grakn.client import *
+import itertools
+
+def check_whether_iterator_empty(iterator):
+    '''
+    @usage: returns iterator if not empty, and None otherwise.
+    NB: works for iterator, not iterable (i.e. not for a list)
+    # source: https://code.activestate.com/recipes/413614-testing-for-an-empty-iterator/
+    '''
+    try:
+        first = next(iterator)
+    except:
+        iterator = None
+    else:
+        iterator = itertools.chain([first], iterator)
+    return iterator
+
 
 def del_db(database, host="localhost", port="1729"):
     '''@usage delete a grakn database
@@ -52,6 +68,76 @@ def init_db(
         print("databases: {}".format(client.databases().all()))
 
 
+
+def ls_types(
+    database, 
+    n=float("inf"),
+    thingtypes=["entity","relation","attribute"],
+    host="localhost", 
+    port="1729"):
+    '''@usage print the types in a schema
+    @param database: the database to intialise, string
+    @param thingstypes: the root types for which to print subtypes
+    @param n: the max number of each root type to print, default all
+    @param host, the host, string
+    @param port, the port, string
+    '''
+    
+    list_query_match = ["match $x sub {}; get $x;".format(thingtype) for thingtype in thingtypes]
+    
+    with GraknClient.core(host+":"+port) as client:
+        with client.session(database, SessionType.SCHEMA) as session:
+            with session.transaction(TransactionType.READ) as read_transaction:
+                print("list_query_match")
+                print(list_query_match)
+                for i in range(len(list_query_match)):
+                    query_match = list_query_match[i]
+                    iterator_conceptMap = read_transaction.query().match(query_match)
+                    k=0
+                    print("===============")
+                    print(thingtypes[i].upper())
+                    print("===============")
+                    for conceptMap in iterator_conceptMap:
+                        if not conceptMap.get("x").get_label() in ["entity", "relation", "attribute"]:
+                            print(conceptMap.get("x").get_label())
+                            k+=1
+                            if k==n:
+                                break
+
+
+def get_owns(
+    database, 
+    thingtype, 
+    host="localhost", 
+    port="1729"):
+    '''@usage get the attribute types owned by thingtype
+    @param database: the database, string
+    @param thingtype: the thingtype for which to retrieve attributes, string 
+    @param host: the host grakn is running on
+    @param port: the port grakn is running on
+    @return dict of string {"attr1":valuetype, "attr2":valuetype, ... "@key":"attr1"}
+            where the "@key" key returns the name of the key attribute (if it exists)    
+    '''
+    query_thingtype = "match $x type {}; get $x;".format(thingtype)
+    dict_out = {}
+
+    with GraknClient.core(host+":"+port) as client:
+        with client.session(database, SessionType.SCHEMA) as session:
+            with session.transaction(TransactionType.READ) as read_transaction:  
+                iterator_conceptMap = read_transaction.query().match(query_thingtype)
+                concept = next(iterator_conceptMap).get("x")
+                iterator_attr = concept.get_owns(value_type=None, keys_only=False)
+                for attrtype in iterator_attr:
+                    dict_out[attrtype.get_label()] = str(attrtype.get_value_type()).split(".")[1].lower()
+                iterator_key = concept.get_owns(value_type=None, keys_only=True)
+                iterator_key = check_whether_iterator_empty(iterator_key)
+                if not iterator_key is None:
+                    dict_out["@key"] = next(iterator_key).get_label()
+    
+    return dict_out 
+          
+
+          
 def def_attr_type(
     database, 
     new_attr_label, 
@@ -77,6 +163,7 @@ def def_attr_type(
     query_define_attr = "define {0} sub {1}, value {2};".format(new_attr_label, sup_label, new_attr_value)
     list_concept = [] 
 
+    # get all the types in the schema
     with GraknClient.core(host+":"+port) as client:
         with client.session(database, SessionType.SCHEMA) as session:
             with session.transaction(TransactionType.READ) as read_transaction:
@@ -86,19 +173,23 @@ def def_attr_type(
                         if not conceptMap.get("x").get_label() in ["entity", "relation", "attribute"]:
                             list_concept.append(conceptMap.get("x"))
             
-        #with client.session(database, SessionType.SCHEMA) as session:
+            # define the new attribute
             with session.transaction(TransactionType.WRITE) as write_transaction:
                 write_transaction.query().define(query_define_attr)
                 write_transaction.commit()
-        
-        #with client.session(database, SessionType.SCHEMA) as session:
+
+            # make existing types own the new attribute
             for concept in list_concept:
                 with session.transaction(TransactionType.READ) as read_transaction:
                     concept_sup_label = concept.as_remote(read_transaction).get_supertype().get_label()
                 with session.transaction(TransactionType.WRITE) as write_transaction:
-                    query_define_owns = "define {0} sub {1}, owns {2}".format(concept.get_label(), concept_sup_label, new_attr_label)
-                    # if is_key:
-                    #     query_define_owns += " @key"
+                    query_define_owns = "define {0} sub {1},".format(concept.get_label(), concept_sup_label) 
+                    if concept.is_attribute_type():
+                        valuetype = str(concept.get_value_type()).split(".")[1].lower()
+                        query_define_owns += "value " + valuetype + ", "
+                    query_define_owns += "owns {}".format(new_attr_label)
+                    if is_key:
+                        query_define_owns += " @key"
                     query_define_owns += ";"
                     print(query_define_owns)
                     write_transaction.query().define(query_define_owns)
@@ -162,3 +253,71 @@ def def_rel_type(
                         write_transaction.query().define(query_define_plays)
                         write_transaction.commit()
 
+
+
+def insert_data(
+    database, 
+    gql_data=None, 
+    parse_lines=False, 
+    host="localhost", 
+    port="1729"):
+    '''
+    @param database: the database to intialise, string
+    @param gql_data: path to data, string
+    @param parse_lines: whether to parse gql_data line-by-line or as a whole. bool, default False
+    @param host, the host, string
+    @param port, the port, string
+    '''
+    with GraknClient.core(host+":"+port) as client:          
+        if parse_lines:
+            f = open(gql_data, "r")
+            with client.session(database, SessionType.DATA) as session:
+                for line in f.readlines():
+                    if all([token in line for token in ["insert",";"]]):
+                        with session.transaction(TransactionType.WRITE) as write_transaction:
+                            write_transaction.query().insert(line)
+                            write_transaction.commit()
+        else:
+            query_insert = open(gql_data, "r").read()
+            with client.session(database, SessionType.DATA) as session:
+                with session.transaction(TransactionType.WRITE) as write_transaction:
+                    write_transaction.query().insert(query_insert)
+                    write_transaction.commit()
+
+        print("databases: {}".format(client.databases().all()))
+
+
+
+def modify_things(
+    database, 
+    query_match = "match $x isa thing; get $x;",
+    thing_function = lambda thing, write_transaction: None,
+    args=None,
+    host="localhost", 
+    port="1729"):
+    '''@usage: iterate over all non-root things matching query, calling thing_function
+    @param database: the name of the database. string 
+    @param thing_function: a function that takes a thing and a write transaction as first and second argument. 
+                Additional positional arguments can be passed through args. 
+                Optionally returns value
+    @param args: a list of additional positional arguments to pass to thing_function after thing
+    @param host: the host grakn is running on
+    @param port: the port grakn is running on
+    @return a list of values returned by thing_function (if None returned, list of None)
+    '''
+    # TODO: does the read transaction stay open?
+    list_out = [] 
+    with GraknClient.core(host+":"+port) as client:
+        with client.session(database, SessionType.DATA) as session:
+            with session.transaction(TransactionType.READ) as read_transaction:
+                iterator_conceptMap = read_transaction.query().match(query_match)
+                for conceptMap in iterator_conceptMap:
+                    with session.transaction(TransactionType.WRITE) as write_transaction:
+                        thing = conceptMap.get("x")
+                        if len(args):
+                            list_out.append(thing_function(thing, write_transaction, *args))
+                        else:
+                            list_out.append(thing_function(thing, write_transaction))
+                        write_transaction.commit()
+    return list_out 
+    
