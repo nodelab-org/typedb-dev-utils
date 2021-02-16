@@ -1,47 +1,4 @@
 from grakn.client import *
-# import pkg_resources
-
-def init_db(database, gql_schema, gql_data, host="localhost", port="1729"):
-    '''
-    @param database: the database to intialise, string
-    @param gql_schema: path to schema, string
-    @param gql_data: path to data, string
-    @param host, the host, string
-    @param port, the port, string
-    '''
-
-    
-    with GraknClient.core(host+":"+port) as client:
-        client.databases().create(database)
-        with client.session(database, SessionType.SCHEMA) as session:
-            #if gql_schema is None: 
-                #gql_schema = pkg_resources.get_resource_filename(__name__, 'data/tenancy_schema.gql')
-                # use packaged data
-                #f = pkg_resources.resource_stream(__name__, 'data/tenancy_schema.gql').read()
-            #else:
-            f = open(gql_schema, "r")#
-            for line in f.readlines():
-                with session.transaction(TransactionType.WRITE) as write_transaction:
-                    if all([token in line for token in ["define","sub",";"]]):
-                        write_transaction.query().define(line)
-                        write_transaction.commit()
-                
-        with client.session(database, SessionType.DATA) as session:
-            with session.transaction(TransactionType.WRITE) as write_transaction:
-                #if gql_data is None:
-                    # use packaged data
-                #    gql_data=pkg_resources.get_resource_filename(__name__, 'data/tenancy_data.gql')
-                #    f = pkg_resources.resource_stream(__name__, 'data/tenancy_data.gql').read()
-                #else:
-                f = open(gql_data, "r")#
-                for line in f.readlines():
-                    with session.transaction(TransactionType.WRITE) as write_transaction:
-                        if all([token in line for token in ["insert",";"]]):
-                            write_transaction.query().insert(line)
-                            write_transaction.commit()
-
-        print("databases: {}".format(client.databases().all()))
-
 
 def del_db(database, host="localhost", port="1729"):
     '''@usage delete a grakn database
@@ -51,17 +8,55 @@ def del_db(database, host="localhost", port="1729"):
     @return None
     '''
     with GraknClient.core(host+":"+port) as client:
-        client.databases().delete(database)
+        if client.databases().contains(database):
+            client.databases().delete(database)
+            print(database + " deleted")
+        else:
+            print(database + " not found")
 
         print("databases: {}".format(client.databases().all())) 
 
+
+def init_db(
+    database, 
+    gql_schema=None, 
+    parse_lines=False, 
+    host="localhost", 
+    port="1729"):
+    '''
+    @param database: the database to intialise, string
+    @param gql_schema: path to schema, string
+    @param parse_lines: whether to parse gql_schema line-by-line or as a whole. Bool, default False
+    @param host, the host, string
+    @param port, the port, string
+    '''
+    with GraknClient.core(host+":"+port) as client:
+        client.databases().create(database)
+        if not gql_schema is None:
+            if parse_lines:
+                f = open(gql_schema, "r")#
+                with client.session(database, SessionType.SCHEMA) as session:
+                    for line in f.readlines():
+                        if all([token in line for token in ["define","sub",";"]]):
+                            with session.transaction(TransactionType.WRITE) as write_transaction:
+                                write_transaction.query().define(line)
+                                write_transaction.commit()
+            else:
+                query_define = open(gql_schema, "r").read()
+                with client.session(database, SessionType.SCHEMA) as session:
+                    with session.transaction(TransactionType.WRITE) as write_transaction:
+                        write_transaction.query().define(query_define)
+                        write_transaction.commit()
+
+        print("initiated " + database)              
+        print("databases: {}".format(client.databases().all()))
 
 
 def def_attr_type(
     database, 
     new_attr_label, 
     new_attr_value, 
-    sup="attribute",
+    sup_label="attribute",
     is_key=False,
     thingtypes = ["entity", "relation", "attribute"], 
     host="localhost", 
@@ -79,7 +74,7 @@ def def_attr_type(
     '''
     
     list_query_match = ["match $x sub {}; get $x;".format(thingtype) for thingtype in thingtypes]
-    query_define_attr = "define {0} sub {1}, value {2};".format(new_attr_label, sup, new_attr_value)
+    query_define_attr = "define {0} sub {1}, value {2};".format(new_attr_label, sup_label, new_attr_value)
     list_concept = [] 
 
     with GraknClient.core(host+":"+port) as client:
@@ -88,18 +83,24 @@ def def_attr_type(
                 for query_match in list_query_match:
                     iterator_conceptMap = read_transaction.query().match(query_match)
                     for conceptMap in iterator_conceptMap:
-                        list_concept.append(conceptMap.get("x"))
-
+                        if not conceptMap.get("x").get_label() in ["entity", "relation", "attribute"]:
+                            list_concept.append(conceptMap.get("x"))
+            
+        #with client.session(database, SessionType.SCHEMA) as session:
             with session.transaction(TransactionType.WRITE) as write_transaction:
                 write_transaction.query().define(query_define_attr)
                 write_transaction.commit()
-
+        
+        #with client.session(database, SessionType.SCHEMA) as session:
             for concept in list_concept:
+                with session.transaction(TransactionType.READ) as read_transaction:
+                    concept_sup_label = concept.as_remote(read_transaction).get_supertype().get_label()
                 with session.transaction(TransactionType.WRITE) as write_transaction:
-                    query_define_owns = "define $x type {}, owns {}".format(concept.label(), new_attr_label)
-                    if is_key:
-                        query_define_owns += " @key"
+                    query_define_owns = "define {0} sub {1}, owns {2}".format(concept.get_label(), concept_sup_label, new_attr_label)
+                    # if is_key:
+                    #     query_define_owns += " @key"
                     query_define_owns += ";"
+                    print(query_define_owns)
                     write_transaction.query().define(query_define_owns)
                     write_transaction.commit()
                     
@@ -134,7 +135,7 @@ def def_rel_type(
                             query_sub = "match $x sub {}; get $x;".format(root_type)
                             iterator_conceptMap = read_transaction.query().match(query_sub)
                             for conceptMap in iterator_conceptMap:
-                                dict_role_players[role_label].append(conceptMap.get("x").label())
+                                dict_role_players[role_label].append(conceptMap.get("x").get_label())
                         # remove the root type from the role players
                         idx = dict_role_players[role_label].index(root_type)   
                         dict_role_players[role_label].pop(idx)
@@ -155,45 +156,9 @@ def def_rel_type(
                     # get sup
                     with session.transaction(TransactionType.READ) as read_transaction:
                         role_player_concept = read_transaction.concepts().getThingType(role_player_label)
-                        sup_label = role_player_concept.get_supertype().label()
+                        sup_label = role_player_concept.get_supertype().get_label()
                     query_define_plays = "define {0} sub {1}, plays {2}:{3};".format(role_player_label, sup_label, new_rel_label, role_label)
                     with session.transaction(TransactionType.WRITE) as write_transaction:
                         write_transaction.query().define(query_define_plays)
                         write_transaction.commit()
-
-
-
-
-def modify_things(
-    database, 
-    query_match = "match $x isa thing; get $x;",
-    thing_function = lambda thing, write_transaction: None,
-    args=None,
-    host="localhost", 
-    port="1729"):
-    '''@usage: iterate over all non-root things matching query, calling thing_function
-    @param database: the name of the database. string 
-    @param thing_function: a function that takes a thing and a write transaction as first and second argument. 
-                Additional positional arguments can be passed through args. 
-                Optionally returns value
-    @param args: a list of additional positional arguments to pass to thing_function after thing
-    @param host: the host grakn is running on
-    @param port: the port grakn is running on
-    @return a list of values returned by thing_function (if None returned, list of None)
-    '''
-    # TODO: does the read transaction stay open?
-    list_out = [] 
-    with GraknClient.core(host+":"+port) as client:
-        with client.session(database, SessionType.DATA) as session:
-            with session.transaction(TransactionType.READ) as read_transaction:
-                iterator_conceptMap = read_transaction.query().match(query_match)
-                for conceptMap in iterator_conceptMap:
-                    with session.transaction(TransactionType.WRITE) as write_transaction:
-                        thing = conceptMap.get("x")
-                        if len(args):
-                            list_out.append(thing_function(thing, write_transaction, *args))
-                        else:
-                            list_out.append(thing_function(thing, write_transaction))
-                        write_transaction.commit()
-    return list_out 
 
