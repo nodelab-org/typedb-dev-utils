@@ -37,12 +37,14 @@ def init_db(
     database, 
     gql_schema=None, 
     parse_lines=False, 
+    verbose=False,
     host="localhost", 
     port="1729"):
     '''
     @param database: the database to intialise, string
     @param gql_schema: path to schema, string
     @param parse_lines: whether to parse gql_schema line-by-line or as a whole. Bool, default False
+    @param verbose: if True, print the define queries
     @param host, the host, string
     @param port, the port, string
     '''
@@ -54,11 +56,15 @@ def init_db(
                 with client.session(database, SessionType.SCHEMA) as session:
                     for line in f.readlines():
                         if all([token in line for token in ["define","sub",";"]]):
+                            if verbose:
+                                print(line)
                             with session.transaction(TransactionType.WRITE) as write_transaction:
                                 write_transaction.query().define(line)
                                 write_transaction.commit()
             else:
                 query_define = open(gql_schema, "r").read()
+                if verbose:
+                    print(query_define)
                 with client.session(database, SessionType.SCHEMA) as session:
                     with session.transaction(TransactionType.WRITE) as write_transaction:
                         write_transaction.query().define(query_define)
@@ -75,10 +81,10 @@ def ls_types(
     thingtypes=["entity","relation","attribute"],
     host="localhost", 
     port="1729"):
-    '''@usage print the types in a schema
+    '''@usage print the types in a schema. Useful for getting a peak into the schema.
     @param database: the database to intialise, string
-    @param thingstypes: the root types for which to print subtypes
     @param n: the max number of each root type to print, default all
+    @param thingtypes: the root types for which to print subtypes
     @param host, the host, string
     @param port, the port, string
     '''
@@ -88,8 +94,6 @@ def ls_types(
     with GraknClient.core(host+":"+port) as client:
         with client.session(database, SessionType.SCHEMA) as session:
             with session.transaction(TransactionType.READ) as read_transaction:
-                print("list_query_match")
-                print(list_query_match)
                 for i in range(len(list_query_match)):
                     query_match = list_query_match[i]
                     iterator_conceptMap = read_transaction.query().match(query_match)
@@ -105,39 +109,13 @@ def ls_types(
                                 break
 
 
-def get_owns(
-    database, 
-    thingtype, 
-    host="localhost", 
-    port="1729"):
-    '''@usage get the attribute types owned by thingtype
-    @param database: the database, string
-    @param thingtype: the thingtype for which to retrieve attributes, string 
-    @param host: the host grakn is running on
-    @param port: the port grakn is running on
-    @return dict of string {"attr1":valuetype, "attr2":valuetype, ... "@key":"attr1"}
-            where the "@key" key returns the name of the key attribute (if it exists)    
-    '''
-    query_thingtype = "match $x type {}; get $x;".format(thingtype)
-    dict_out = {}
 
-    with GraknClient.core(host+":"+port) as client:
-        with client.session(database, SessionType.SCHEMA) as session:
-            with session.transaction(TransactionType.READ) as read_transaction:  
-                iterator_conceptMap = read_transaction.query().match(query_thingtype)
-                concept = next(iterator_conceptMap).get("x")
-                iterator_attr = concept.get_owns(value_type=None, keys_only=False)
-                for attrtype in iterator_attr:
-                    dict_out[attrtype.get_label()] = str(attrtype.get_value_type()).split(".")[1].lower()
-                iterator_key = concept.get_owns(value_type=None, keys_only=True)
-                iterator_key = check_whether_iterator_empty(iterator_key)
-                if not iterator_key is None:
-                    dict_out["@key"] = next(iterator_key).get_label()
-    
-    return dict_out 
-          
 
-          
+
+
+
+
+
 def def_attr_type(
     database, 
     new_attr_label, 
@@ -145,6 +123,7 @@ def def_attr_type(
     sup_label="attribute",
     is_key=False,
     thingtypes = ["entity", "relation", "attribute"], 
+    verbose=False,
     host="localhost", 
     port="1729"):
     '''@usage: add a new attribute to all or subset of ThingTypes
@@ -154,6 +133,7 @@ def def_attr_type(
     @param sup: the supertype form which the new attributetype will inherit 
     @param is_key: is the attribute a key, bool
     @param thingtypes: list of one or more of ["entity", "relation", "attribute"]
+    @param verbose: if True, print the define queries
     @param host: the host grakn is running on
     @param port: the port grakn is running on
     @return None 
@@ -175,6 +155,8 @@ def def_attr_type(
             
             # define the new attribute
             with session.transaction(TransactionType.WRITE) as write_transaction:
+                if verbose:
+                    print(query_define_attr)
                 write_transaction.query().define(query_define_attr)
                 write_transaction.commit()
 
@@ -191,17 +173,52 @@ def def_attr_type(
                     if is_key:
                         query_define_owns += " @key"
                     query_define_owns += ";"
-                    print(query_define_owns)
+                    if verbose:
+                        print(query_define_owns)
                     write_transaction.query().define(query_define_owns)
                     write_transaction.commit()
                     
 
+
+
+def get_type_owns(
+    database, 
+    thingtype, 
+    host="localhost", 
+    port="1729"):
+    '''@usage get the attribute types owned by thingtype
+    @param database: the database, string
+    @param thingtype: the thingtype for which to retrieve attributes, string 
+    @param host: the host grakn is running on
+    @param port: the port grakn is running on
+    @return dict of string {"attr1":valuetype, "attr2":valuetype, ... "@key":"attr1"}
+            where the "@key" key returns the name of the key attribute (if it exists)    
+    '''
+    query_thingtype = "match $x type {}; get $x;".format(thingtype)
+    dict_out = {}
+
+    with GraknClient.core(host+":"+port) as client:
+        with client.session(database, SessionType.SCHEMA) as session:
+            with session.transaction(TransactionType.READ) as read_transaction:  
+                iterator_conceptMap = read_transaction.query().match(query_thingtype)
+                concept = next(iterator_conceptMap).get("x")
+                iterator_attr = concept.as_remote(read_transaction).get_owns(value_type=None, keys_only=False)
+                for attrtype in iterator_attr:
+                    dict_out[attrtype.get_label()] = str(attrtype.get_value_type()).split(".")[1].lower()
+                iterator_key = concept.as_remote(read_transaction).get_owns(value_type=None, keys_only=True)
+                iterator_key = check_whether_iterator_empty(iterator_key)
+                if not iterator_key is None:
+                    dict_out["@key"] = next(iterator_key).get_label()
+    
+    return dict_out 
+          
 
 def def_rel_type(
     database, 
     new_rel_label, 
     dict_role_players,
     sup="relation",
+    verbose=False,
     host="localhost", 
     port="1729"):
     '''@usage: add a new relationtype to the schema
@@ -210,6 +227,7 @@ def def_rel_type(
     @param dict_role_players: dict with role labels (string) as keys and arrays of role_player types (string) as values
            to make a role applicable to all descendents of one or more root types, provide one or more of the root type(s) ["entity", "relation", "attribute"]
     @param sup: the supertype form which the new relationtype will inherit 
+    @param verbose: if True, print the define queries
     @param host: the host grakn is running on
     @param port: the port grakn is running on
     @return None 
@@ -238,6 +256,8 @@ def def_rel_type(
 
             with session.transaction(TransactionType.WRITE) as write_transaction:
                 # define relation type
+                if verbose:
+                    print(query_define_rel)
                 write_transaction.query().define(query_define_rel)
                 write_transaction.commit()
 
@@ -246,25 +266,64 @@ def def_rel_type(
                 for role_player_label in list_role_player:
                     # get sup
                     with session.transaction(TransactionType.READ) as read_transaction:
-                        role_player_concept = read_transaction.concepts().getThingType(role_player_label)
-                        sup_label = role_player_concept.get_supertype().get_label()
+                        role_player_concept = read_transaction.concepts().get_thing_type(role_player_label)
+                        sup_label = role_player_concept.as_remote(read_transaction).get_supertype().get_label()
                     query_define_plays = "define {0} sub {1}, plays {2}:{3};".format(role_player_label, sup_label, new_rel_label, role_label)
                     with session.transaction(TransactionType.WRITE) as write_transaction:
+                        if verbose:
+                            print(query_define_plays)
                         write_transaction.query().define(query_define_plays)
                         write_transaction.commit()
 
 
 
+
+
+def get_type_plays(
+    database, 
+    thingtype, 
+    host="localhost", 
+    port="1729"):
+    '''@usage get the roles played by thingtype
+    @param database: the database, string
+    @param thingtype: the thingtype for which to retrieve attributes, string 
+    @param host: the host grakn is running on
+    @param port: the port grakn is running on
+    @return list of string ["rel1:role1", "rel1:role2", "rel2:role3"..]
+    '''
+    query_thingtype = "match $x type {}; get $x;".format(thingtype)
+    list_out = []
+
+    with GraknClient.core(host+":"+port) as client:
+        with client.session(database, SessionType.SCHEMA) as session:
+            with session.transaction(TransactionType.READ) as read_transaction:  
+                iterator_conceptMap = read_transaction.query().match(query_thingtype)
+                concept = next(iterator_conceptMap).get("x")
+                iterator_roletype = concept.as_remote(read_transaction).get_plays()
+                for roletype in iterator_roletype:
+                    list_out.append(roletype.get_scoped_label())
+    
+    list_out.sort()
+
+    return list_out
+
+
+
+
 def insert_data(
     database, 
-    gql_data=None, 
+    gql_data,
     parse_lines=False, 
+    line_modifier = lambda line: line,
+    verbose=False,
     host="localhost", 
     port="1729"):
     '''
     @param database: the database to intialise, string
     @param gql_data: path to data, string
     @param parse_lines: whether to parse gql_data line-by-line or as a whole. bool, default False
+    @param verbose: if True, print the insert queries
+    @param line_modifier: if parse_lines, optionally pre-process each line using a provided function that takes a string input and returns the modified line.
     @param host, the host, string
     @param port, the port, string
     '''
@@ -274,11 +333,20 @@ def insert_data(
             with client.session(database, SessionType.DATA) as session:
                 for line in f.readlines():
                     if all([token in line for token in ["insert",";"]]):
+                        # print("original line")
+                        # print(line)
+                        line = line_modifier(line)
+                        # print("modified line")  
+                        # print(line)
+                        if verbose:
+                            print(line)
                         with session.transaction(TransactionType.WRITE) as write_transaction:
                             write_transaction.query().insert(line)
                             write_transaction.commit()
         else:
             query_insert = open(gql_data, "r").read()
+            if verbose:
+                print(query_insert)
             with client.session(database, SessionType.DATA) as session:
                 with session.transaction(TransactionType.WRITE) as write_transaction:
                     write_transaction.query().insert(query_insert)
@@ -288,24 +356,98 @@ def insert_data(
 
 
 
+def ls_instances(
+    database, 
+    n=10,
+    thingtypes=["entity","relation","attribute"],
+    print_attributes = True,
+    print_relations = True,
+    host="localhost", 
+    port="1729"):
+    '''@usage print the top n instances of each root type, along with an attribute and a relation.
+              useful for getting a peak into the data
+    @param database: the database to intialise, string
+    @param n: the max number of each type to print, default all
+    @param thingtypes: the root types for which to print subtypes
+    @param print_attributes: print the attributes owned by the type, if any
+    @param print_relations: print the relations in which instance plays a role, if any
+    @param host, the host, string
+    @param port, the port, string
+    '''
+    
+    list_query_match = ["match $x isa {}; ".format(thingtype) for thingtype in thingtypes]
+    get_clause = "get $x"
+    if print_attributes:
+        list_query_match = [query_match + "$x has attribute $attr; " for query_match in list_query_match]
+        get_clause += ", $attr"
+    if print_relations:
+        list_query_match = [query_match + "$rel ($role:$x) isa relation; " for query_match in list_query_match]
+        get_clause += ", $rel, $role"
+    get_clause += ";"
+    list_query_match = [query_match + get_clause for query_match in list_query_match]
+    
+    
+    with GraknClient.core(host+":"+port) as client:
+        with client.session(database, SessionType.DATA) as session:
+            with session.transaction(TransactionType.READ) as read_transaction:
+                for i in range(len(list_query_match)):
+                    query_match = list_query_match[i]
+                    iterator_conceptMap = read_transaction.query().match(query_match)
+                    iterator_conceptMap = check_whether_iterator_empty(iterator_conceptMap)
+                    if not iterator_conceptMap is None:
+                        k=0
+                        print("===============")
+                        print(thingtypes[i].upper())
+                        print("===============")
+                        for conceptMap in iterator_conceptMap:
+                            dict_concept = conceptMap.map()
+                            concept = dict_concept["x"]
+                            iid = concept.get_iid()
+                            type_label = concept.as_remote(read_transaction).get_type().get_label()
+                            line_print = "$x iid {0} isa {1}; ".format(iid, type_label)
+                            if print_attributes:
+                                concept_attr = dict_concept["attr"]
+                                attr_value = str(concept_attr.get_value())
+                                attr_type_label = concept_attr.as_remote(read_transaction).get_type().get_label()
+                                line_print += "$attr {0} isa {1}; ".format(attr_value, attr_type_label)
+                            if print_relations:
+                                # relation
+                                concept_rel = dict_concept["rel"]
+                                rel_iid = concept_rel.get_iid()
+                                rel_type_label = concept_rel.as_remote(read_transaction).get_type().get_label()
+                                # role
+                                concept_role = dict_concept["role"]
+                                role_label = concept_role.get_label()
+                                line_print += "$rel iid {0} ({1}:$x) isa {2}; ".format(rel_iid, role_label, rel_type_label)
+
+                            print(line_print)
+                            k+=1
+                            if k==n:
+                                break
+
+
+
 def modify_things(
     database, 
     query_match = "match $x isa thing; get $x;",
-    thing_function = lambda thing, write_transaction: None,
+    thing_modifier = lambda thing, write_transaction: None,
     args=None,
+    verbose=False,
     host="localhost", 
     port="1729"):
-    '''@usage: iterate over all non-root things matching query, calling thing_function
+    '''@usage: iterate over all non-root things matching query, calling thing_modifier
     @param database: the name of the database. string 
-    @param thing_function: a function that takes a thing and a write transaction as first and second argument. 
+    @param thing_modifier: a function that takes a thing and a write transaction as first and second argument. 
                 Additional positional arguments can be passed through args. 
                 Optionally returns value
-    @param args: a list of additional positional arguments to pass to thing_function after thing
+    @param args: a list of additional positional arguments to pass to thing_modifier after thing
+    @param verbose: if True, print the queries
     @param host: the host grakn is running on
     @param port: the port grakn is running on
-    @return a list of values returned by thing_function (if None returned, list of None)
+    @return a list of values returned by thing_modifier (if None returned, list of None)
     '''
     # TODO: does the read transaction stay open?
+    # TODO finish!
     list_out = [] 
     with GraknClient.core(host+":"+port) as client:
         with client.session(database, SessionType.DATA) as session:
@@ -315,9 +457,9 @@ def modify_things(
                     with session.transaction(TransactionType.WRITE) as write_transaction:
                         thing = conceptMap.get("x")
                         if len(args):
-                            list_out.append(thing_function(thing, write_transaction, *args))
+                            list_out.append(thing_modifier(thing, write_transaction, *args))
                         else:
-                            list_out.append(thing_function(thing, write_transaction))
+                            list_out.append(thing_modifier(thing, write_transaction))
                         write_transaction.commit()
     return list_out 
     
