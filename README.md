@@ -12,13 +12,13 @@ A library of tools to speed up grakn development with the grakn python API:
 with pip:
 
 ```
-python -m pip install git+https://github.com/JonThom/grakn_dev_utils
+python -m pip install git+https://github.com/JonThom/grakn-dev-utils
 ```
 
 with pipenv:
 
 ```
-pipenv install git+https://github.com/JonThom/grakn_dev_utils#egg=grakn_dev_utils
+pipenv install git+https://github.com/JonThom/grakn-dev-utils#egg=grakn_dev_utils
 ```
 
 ### run
