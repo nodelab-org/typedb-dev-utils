@@ -21,6 +21,12 @@ with pipenv:
 pipenv install git+https://github.com/JonThom/grakn-dev-utils#egg=grakn_dev_utils
 ```
 
+use poetry to add to dependencies:
+
+```
+poetry add git+https://github.com/JonThom/grakn-dev-utils.git
+```
+
 ### run
 
 first, make sure grakn 2.0 is installed and running. 
