@@ -52,9 +52,19 @@ py-dev-utils = {git = "https://github.com/JonThom/py-dev-utils.git"}
 [tool.poetry.dev-dependencies]
 pytest = "^3.0"
 pytest-cov = "^2.4"
+coverage = {extras = ["toml"], version = "^5.4"}
+
+# coverage
+[tool.coverage.paths]
+source = ["grakn_dev_utils"]
+
+[tool.coverage.report]
+show_missing = true
+fail_under = 100
 
 [tool.poetry.scripts]
 # my-script = 'new_package:main>'
+
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
