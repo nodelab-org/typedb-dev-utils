@@ -49,7 +49,7 @@ def add_UID_to_each_insert_query(line):
     line_modified += quotes + str(uuid.uuid4()) + quotes + ";"
     return line_modified
 
-insert_data(
+gradevils.insert_data(
     database="test",
     gql_data=<path-to-gql.data>,
     parse_lines=True,
@@ -64,7 +64,7 @@ gradevils.del_db(database="test")
 
 see the first 5 EntityTypes, RelationTypes and AttributeTypes	
 ```
-ls_types(
+gradevils.ls_types(
     database="test",
     n=5,
     thingtypes=["entity","relation","attribute"])
@@ -72,7 +72,7 @@ ls_types(
 
 see the top 5 EntityTypes, RelationTypes and AttributeTypes, including their attributes and relations	
 ```
-ls_instances(
+gradevils.ls_instances(
     database="test",
     n=5
     thingtypes=["entity","relation","attribute"],
@@ -82,7 +82,7 @@ ls_instances(
 
 define a new AttributeType and make all persons and companies own it
 ```
-def_attr_type(
+gradevils.def_attr_type(
     database="test",
     new_attr_label="name",
     new_attr_value="string",
@@ -93,7 +93,7 @@ def_attr_type(
 
 define a new RelationType that inherits from the root RelationType
 ```
-def_rel_type(
+gradevils.def_rel_type(
     database="test",
     new_rel_label="crime-syndicate",
     dict_role_players={"ring-leader":{"role_players":["person"], "role_sup":"role"}, {"grunt":{"role_players":["person"], "role_sup":"role"}},
@@ -102,14 +102,14 @@ def_rel_type(
 
 get the AttributeTypes owned by a ThingType
 ```
-get_type_owns(
+gradevils.get_type_owns(
     database="test",
     thingtype="person")
 ```
 
 get the RelationTypes in which ThingType is a role player
 ```
-get_type_plays(
+gradevils.get_type_plays(
     database="test",
     thingtype="person")
 ```
