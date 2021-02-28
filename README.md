@@ -80,7 +80,7 @@ see the top 5 EntityTypes, RelationTypes and AttributeTypes, including their att
 ```
 gradevils.ls_instances(
     database="test",
-    n=5
+    n=5,
     thingtypes=["entity","relation","attribute"],
     print_attributes = True,
     print_relations = True)
@@ -102,7 +102,9 @@ define a new RelationType that inherits from the root RelationType
 gradevils.def_rel_type(
     database="test",
     new_rel_label="crime-syndicate",
-    dict_role_players={"ring-leader":{"role_players":["person"], "role_sup":"role"}, {"grunt":{"role_players":["person"], "role_sup":"role"}},
+    dict_role_players={
+	"ring-leader":{"role_players":["person"], "role_sup":"role"}, 
+	"grunt":{"role_players":["person"], "role_sup":"role"}},
     rel_sup="relation")
 ```
 
@@ -120,4 +122,4 @@ gradevils.get_type_plays(
     thingtype="person")
 ```
 
-Check out the function docstrings for details
+Check out the function docstrings for details!
