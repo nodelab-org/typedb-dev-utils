@@ -47,6 +47,8 @@ gradevils.init_db(
 
 insert data from a gql script, reading line-by-line and modifying each line using a custom function (e.g. to add a unique identifier)
 ```
+import uuid 
+
 def add_UID_to_each_insert_query(line):
     line_modified = line.rstrip("; \n") + ", has UID "  
     quotes = '"' if '"' in line else "'"
