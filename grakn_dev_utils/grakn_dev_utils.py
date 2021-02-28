@@ -204,8 +204,9 @@ def def_rel_type(
     @param dict_role_players: dict
             keys: role labels (string)
             values: dict
-                keys: "role_players", "role_sup"
-                values: array of role_player types (string), role supertype label ("role" if inheriting from root Role))
+                key-values:
+                    "role_players": array of role_player types (string)
+                    "role_sup": role supertype label ("role" if inheriting from root Role)
            to make a role applicable to all descendents of one or more root types, provide one or more of the root type(s) ["entity", "relation", "attribute"]
     @param rel_sup: the supertype form which the new relationtype will inherit
     @param verbose: if True, print the define queries
