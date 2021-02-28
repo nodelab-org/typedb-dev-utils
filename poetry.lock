@@ -44,20 +44,20 @@ toml = ["toml"]
 
 [[package]]
 name = "grakn-client"
-version = "2.0.0a7"
+version = "2.0.0a8"
 description = "Grakn Client for Python"
 category = "main"
 optional = false
 python-versions = "*"
 
 [package.dependencies]
-grakn-protocol = "2.0.0a9"
+grakn-protocol = "2.0.0a10"
 grpcio = "1.35.0"
 protobuf = "3.14.0"
 
 [[package]]
 name = "grakn-protocol"
-version = "2.0.0a9"
+version = "2.0.0a10"
 description = "Grakn gRPC Protocol"
 category = "main"
 optional = false
@@ -220,7 +220,7 @@ testing = ["pytest (>=3.5,!=3.7.3)", "pytest-checkdocs (>=1.2.3)", "pytest-flake
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"  # Compatible python versions must be declared here
-content-hash = "0fda9a50482b210ac4a70194e8877b42d2c286dd6686a51d2e28895be3d57c51"
+content-hash = "88f83f4fa4d04265ef724302f9be4caf8542a381992894a40dfa6ce0102de7d4"
 
 [metadata.files]
 atomicwrites = [
@@ -287,10 +287,10 @@ coverage = [
     {file = "coverage-5.4.tar.gz", hash = "sha256:6d2e262e5e8da6fa56e774fb8e2643417351427604c2b177f8e8c5f75fc928ca"},
 ]
 grakn-client = [
-    {file = "grakn-client-2.0.0-alpha-7.tar.gz", hash = "sha256:101e6949f1e26b6981a9deeb970d2192cc7eb79c05eaa16713c8ac8d5a8478cc"},
+    {file = "grakn-client-2.0.0-alpha-8.tar.gz", hash = "sha256:8a7749d05452925f0090896d6a8ab8bbb04716ee3fce1e6911753ab8170e915c"},
 ]
 grakn-protocol = [
-    {file = "grakn-protocol-2.0.0-alpha-9.tar.gz", hash = "sha256:602f8f204ec1a61f883597e387469db5637f97f6388a4c019076771f99a4e8d2"},
+    {file = "grakn-protocol-2.0.0-alpha-10.tar.gz", hash = "sha256:aa9a14957ebcddaa9e9093d12aa6bbb6899bc6a1d949c822a55fe3bf6c278da6"},
 ]
 grpcio = [
     {file = "grpcio-1.35.0-cp27-cp27m-macosx_10_10_x86_64.whl", hash = "sha256:95cc4d2067deced18dc807442cf8062a93389a86abf8d40741120054389d3f29"},
