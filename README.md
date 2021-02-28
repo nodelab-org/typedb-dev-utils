@@ -36,9 +36,13 @@ first, make sure grakn 2.0 is installed and running.
 import grakn_dev_utils as gradevils
 ```
 
-initialise a database with default toy schema and data
+initialise a database and define a schema by reading a gql file line by line
 ```
-gradevils.init_db(database="test")
+gradevils.init_db(
+    database="test",
+    gql_schema="<path-to-gql.schema>",
+    parse_lines=True
+)
 ```
 
 insert data from a gql script, reading line-by-line and modifying each line using a custom function (e.g. to add a unique identifier)
