@@ -13,12 +13,12 @@ def del_db(database, verbose=False, host="localhost", port="1729"):
     '''
     with GraknClient.core(host+":"+port) as client:
         if client.databases().contains(database):
-            client.databases().delete(database)
+            client.databases().get(database).delete()
         else:
             print(database + " not found")
         if verbose:
             print("deleted " + database)
-            print("databases: {}".format(client.databases().all()))
+            print("databases: {}".format([db.name() for db in client.databases().all()]))
 
 
 def init_db(
@@ -59,7 +59,7 @@ def init_db(
                         write_transaction.commit()
         if verbose:
             print("initiated " + database)
-            print("databases: {}".format(client.databases().all()))
+            print("databases: {}".format([db.name() for db in client.databases().all()]))
 
 
 def ls_types(
