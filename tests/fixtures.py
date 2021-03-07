@@ -4,8 +4,7 @@ from grakn.client import *
 
 @pytest.fixture(scope="session")
 def database_params():
-    return {
-        "database":"test",
+    return {"database":"test",
         "gql_schema":"/Users/rkm916/Sync/data/grakn-database-tenancy/tenancy_schema.gql",
         "gql_data":"/Users/rkm916/Sync/data/grakn-database-tenancy/tenancy_data.gql",
         "host":"localhost",

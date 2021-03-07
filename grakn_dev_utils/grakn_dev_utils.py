@@ -65,18 +65,18 @@ def init_db(
 def ls_types(
     database,
     n=float("inf"),
-    thingtypes=["entity","relation","attribute"],
+    rootTypes=["entity","relation","attribute"],
     host="localhost",
     port="1729"):
     '''@usage print the types in a schema. Useful for getting a peak into the schema.
     @param database: the database to intialise, string
     @param n: the max number of each root type to print, default all
-    @param thingtypes: the root types for which to print subtypes
+    @param rootTypes: the root types for which to print subtypes
     @param host, the host, string
     @param port, the port, string
     '''
 
-    list_query_match = ["match $x sub {}; get $x;".format(thingtype) for thingtype in thingtypes]
+    list_query_match = ["match $x sub {}; get $x;".format(rootType) for rootType in rootTypes]
 
     with GraknClient.core(host+":"+port) as client:
         with client.session(database, SessionType.SCHEMA) as session:
@@ -86,7 +86,7 @@ def ls_types(
                     iterator_conceptMap = read_transaction.query().match(query_match)
                     k=0
                     print("===============")
-                    print(thingtypes[i].upper())
+                    print(rootTypes[i].upper())
                     print("===============")
                     for conceptMap in iterator_conceptMap:
                         if not conceptMap.get("x").get_label() in ["entity", "relation", "attribute"]:
@@ -102,24 +102,33 @@ def def_attr_type(
     new_attr_value,
     sup_label="attribute",
     is_key=False,
-    thingtypes = ["entity", "relation", "attribute"],
+    thingTypes = None,
+    rootTypes = None,
     verbose=False,
     host="localhost",
     port="1729"):
-    '''@usage: add a new attribute to all or subset of ThingTypes
+    '''@usage: add a new attribute to all or subset of thingTypes
     @param database: the name of the database. string
     @param new_attr_label: the label of the new attribute. string
     @param new_attr_value: the value type of the new attribute, one of "long", "double", "string", "boolean" or "datetime". string
     @param sup: the supertype form which the new attributetype will inherit
     @param is_key: is the attribute a key, bool
-    @param thingtypes: list of thing types which will own the attribute. Their subtypes will inherit.
+    @param thingTypes: list of thingTypes which, with their subtypes, will own the attribute. if rootTypes is provided will be ignored
+    @param rootTypes: list of rootTypes whose subtypes will own the attribute. Trumps thingTypes
     @param verbose: if True, print the define queries
     @param host: the host grakn is running on
     @param port: the port grakn is running on
     @return None
     '''
-
-    list_query_match = ["match $x sub! {}; get $x;".format(thingtype) for thingtype in thingtypes]
+    if not thingTypes is None and not rootTypes is None:
+        raise ValueError("One and only one of thingTypes or rootTypes must be provided")
+    if thingTypes is None and rootTypes is None:
+        raise ValueError("One of thingTypes or rootTypes must be provided")
+    
+    if not thingTypes is None:
+        list_query_match = ["match $x type {}; get $x;".format(thingType) for thingType in thingTypes]    
+    elif not rootTypes is None:
+        list_query_match = ["match $x sub! {}; get $x;".format(rootType) for rootType in rootTypes]
     query_define_attr = "define {0} sub {1}, value {2};".format(new_attr_label, sup_label, new_attr_value)
     list_concept = []
 
@@ -161,24 +170,24 @@ def def_attr_type(
 
 def get_type_owns(
     database,
-    thingtype,
+    thingType,
     host="localhost",
     port="1729"):
-    '''@usage get the attribute types owned by thingtype
+    '''@usage get the attribute types owned by thingType
     @param database: the database, string
-    @param thingtype: the thingtype for which to retrieve attributes, string
+    @param thingType: the thingType for which to retrieve attributes, string
     @param host: the host grakn is running on
     @param port: the port grakn is running on
     @return dict of string {"attr1":valuetype, "attr2":valuetype, ... "@key":"attr1"}
             where the "@key" key returns the name of the key attribute (if it exists)
     '''
-    query_thingtype = "match $x type {}; get $x;".format(thingtype)
+    query_thingType = "match $x type {}; get $x;".format(thingType)
     dict_out = {}
 
     with GraknClient.core(host+":"+port) as client:
         with client.session(database, SessionType.SCHEMA) as session:
             with session.transaction(TransactionType.READ) as read_transaction:
-                iterator_conceptMap = read_transaction.query().match(query_thingtype)
+                iterator_conceptMap = read_transaction.query().match(query_thingType)
                 concept = next(iterator_conceptMap).get("x")
                 iterator_attr = concept.as_remote(read_transaction).get_owns(value_type=None, keys_only=False)
                 for attrtype in iterator_attr:
@@ -261,23 +270,23 @@ def def_rel_type(
 
 def get_type_plays(
     database,
-    thingtype,
+    thingType,
     host="localhost",
     port="1729"):
-    '''@usage get the roles played by thingtype
+    '''@usage get the roles played by thingType
     @param database: the database, string
-    @param thingtype: the thingtype for which to retrieve attributes, string
+    @param thingType: the thingType for which to retrieve attributes, string
     @param host: the host grakn is running on
     @param port: the port grakn is running on
     @return list of string ["rel1:role1", "rel1:role2", "rel2:role3"..]
     '''
-    query_thingtype = "match $x type {}; get $x;".format(thingtype)
+    query_thingType = "match $x type {}; get $x;".format(thingType)
     list_out = []
 
     with GraknClient.core(host+":"+port) as client:
         with client.session(database, SessionType.SCHEMA) as session:
             with session.transaction(TransactionType.READ) as read_transaction:
-                iterator_conceptMap = read_transaction.query().match(query_thingtype)
+                iterator_conceptMap = read_transaction.query().match(query_thingType)
                 concept = next(iterator_conceptMap).get("x")
                 iterator_roletype = concept.as_remote(read_transaction).get_plays()
                 for roletype in iterator_roletype:
@@ -331,7 +340,7 @@ def insert_data(
 def ls_instances(
     database,
     n=10,
-    thingtypes=["entity","relation","attribute"],
+    thingTypes=["entity","relation","attribute"],
     print_attributes = True,
     print_relations = True,
     host="localhost",
@@ -340,14 +349,14 @@ def ls_instances(
               useful for getting a peak into the data
     @param database: the database to intialise, string
     @param n: the max number of each type to print, default all
-    @param thingtypes: the types for which to print subtypes
+    @param thingTypes: the types for which to print subtypes
     @param print_attributes: print the attributes owned by the type, if any
     @param print_relations: print the relations in which instance plays a role, if any
     @param host, the host, string
     @param port, the port, string
     '''
 
-    list_query_match = ["match $x isa {}; ".format(thingtype) for thingtype in thingtypes]
+    list_query_match = ["match $x isa {}; ".format(thingType) for thingType in thingTypes]
     get_clause = "get $x"
     if print_attributes:
         list_query_match = [query_match + "$x has attribute $attr; " for query_match in list_query_match]
@@ -368,7 +377,7 @@ def ls_instances(
                     if not iterator_conceptMap is None:
                         k=0
                         print("===============")
-                        print(thingtypes[i].upper())
+                        print(thingTypes[i].upper())
                         print("===============")
                         for conceptMap in iterator_conceptMap:
                             dict_concept = conceptMap.map()

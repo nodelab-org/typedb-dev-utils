@@ -147,7 +147,7 @@ develop = false
 type = "git"
 url = "https://github.com/JonThom/py-dev-utils.git"
 reference = "master"
-resolved_reference = "dba24b3025f6c812fd874979448aa92182b9c9cf"
+resolved_reference = "f9898930ae58eb3da791cb25a5f0f5b44f90fa36"
 
 [[package]]
 name = "pytest"
