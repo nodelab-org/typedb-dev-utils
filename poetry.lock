@@ -44,20 +44,20 @@ toml = ["toml"]
 
 [[package]]
 name = "grakn-client"
-version = "2.0.0a9"
+version = "2.0.0a10"
 description = "Grakn Client for Python"
 category = "main"
 optional = false
 python-versions = "*"
 
 [package.dependencies]
-grakn-protocol = "2.0.0a11"
+grakn-protocol = "2.0.0a12"
 grpcio = "1.35.0"
 protobuf = "3.14.0"
 
 [[package]]
 name = "grakn-protocol"
-version = "2.0.0a11"
+version = "2.0.0a12"
 description = "Grakn gRPC Protocol"
 category = "main"
 optional = false
@@ -147,7 +147,7 @@ develop = false
 type = "git"
 url = "https://github.com/JonThom/py-dev-utils.git"
 reference = "master"
-resolved_reference = "d9e9b729c7c43d3d30b1f4b8cb1bc69cb6045dc0"
+resolved_reference = "dba24b3025f6c812fd874979448aa92182b9c9cf"
 
 [[package]]
 name = "pytest"
@@ -220,7 +220,7 @@ testing = ["pytest (>=3.5,!=3.7.3)", "pytest-checkdocs (>=1.2.3)", "pytest-flake
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"  # Compatible python versions must be declared here
-content-hash = "1267f1451a0944517ac4f431965259af68d4fdc5fc1e842163c2e7667048f18b"
+content-hash = "efd2b4070e7cca4d5c1856a2b8a69154c3a06a9ff91b4bec3e360b081e727c18"
 
 [metadata.files]
 atomicwrites = [
@@ -287,10 +287,10 @@ coverage = [
     {file = "coverage-5.4.tar.gz", hash = "sha256:6d2e262e5e8da6fa56e774fb8e2643417351427604c2b177f8e8c5f75fc928ca"},
 ]
 grakn-client = [
-    {file = "grakn-client-2.0.0-alpha-9.tar.gz", hash = "sha256:c7bdac7628a958797b656dd5fab72e6c3b11ffd04d0d1a36d898db22f509e261"},
+    {file = "grakn-client-2.0.0-alpha-10.tar.gz", hash = "sha256:cf5fbed3d91d27f71b9224700372ce89ca0df50ed47b61e1ba63b70a8d8e8d03"},
 ]
 grakn-protocol = [
-    {file = "grakn-protocol-2.0.0-alpha-11.tar.gz", hash = "sha256:592b1b9142a25d049cf1bb9898024f631d17f0ee726299e66e0fe0a85f71ec77"},
+    {file = "grakn-protocol-2.0.0-alpha-12.tar.gz", hash = "sha256:941fe54223a2f871a15c5879c827fde6e8967e16d9ec10d6ac3ccaf4c43a7b92"},
 ]
 grpcio = [
     {file = "grpcio-1.35.0-cp27-cp27m-macosx_10_10_x86_64.whl", hash = "sha256:95cc4d2067deced18dc807442cf8062a93389a86abf8d40741120054389d3f29"},
