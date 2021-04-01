@@ -9,7 +9,8 @@ def del_db(
     client=None,
     return_client=False,
     host="localhost", 
-    port="1729"):
+    port="1729",
+    parallelisation=2):
     '''@usage delete a grakn database
     @param database: the database to delete, string
     @param verbose: whether to print databases after deletion, bool
@@ -20,7 +21,7 @@ def del_db(
     @return None
     '''
     if client is None:
-        client = GraknClient.core(host+":"+port)
+        client = Grakn.core_client(address=host+":"+port, parallelisation=parallelisation)
     if client.databases().contains(database):
         client.databases().get(database).delete()
     else:
@@ -43,7 +44,8 @@ def init_db(
     client=None,
     return_client=False,
     host="localhost",
-    port="1729"):
+    port="1729",
+    parallelisation=2):
     '''
     @param database: the database to intialise, string
     @param gql_schema: path to schema, string
@@ -55,7 +57,7 @@ def init_db(
     @param port, the port, string
     '''
     if client is None:
-        client = GraknClient.core(host+":"+port)
+        client = Grakn.core_client(address=host+":"+port, parallelisation=parallelisation)
     client.databases().create(database)
     if not gql_schema is None:
         if parse_lines:
@@ -93,7 +95,8 @@ def ls_types(
     client=None,
     return_client=False,
     host="localhost",
-    port="1729"):
+    port="1729",
+    parallelisation=2):
     '''@usage print the types in a schema. Useful for getting a peak into the schema.
     @param database: the database to intialise, string
     @param n: the max number of each root type to print, default all
@@ -107,7 +110,7 @@ def ls_types(
     list_query_match = ["match $x sub {}; get $x;".format(rootType) for rootType in rootTypes]
 
     if client is None:
-        client = GraknClient.core(host+":"+port)
+        client = Grakn.core_client(address=host+":"+port, parallelisation=parallelisation)
     with client.session(database, SessionType.SCHEMA) as session:
         with session.transaction(TransactionType.READ) as read_transaction:
             for i in range(len(list_query_match)):
@@ -118,8 +121,8 @@ def ls_types(
                 print(rootTypes[i].upper())
                 print("===============")
                 for conceptMap in iterator_conceptMap:
-                    if not conceptMap.get("x").get_label() in ["entity", "relation", "attribute"]:
-                        print(conceptMap.get("x").get_label())
+                    if not conceptMap.get("x").get_label().name() in ["entity", "relation", "attribute"]:
+                        print(conceptMap.get("x").get_label().name())
                         k+=1
                         if k==n:
                             break
@@ -141,7 +144,8 @@ def def_attr_type(
     client=None,
     return_client=False,
     host="localhost",
-    port="1729"):
+    port="1729",
+    parallelisation=2):
     '''@usage: add a new attribute to all or subset of thingTypes
     @param database: the name of the database. string
     @param new_attr_label: the label of the new attribute. string
@@ -171,13 +175,13 @@ def def_attr_type(
 
     # get all the types in the schema
     if client is None:
-        client = GraknClient.core(host+":"+port)
+        client = Grakn.core_client(address=host+":"+port,parallelisation=parallelisation)
     with client.session(database, SessionType.SCHEMA) as session:
         with session.transaction(TransactionType.READ) as read_transaction:
             for query_match in list_query_match:
                 iterator_conceptMap = read_transaction.query().match(query_match)
                 for conceptMap in iterator_conceptMap:
-                    if not conceptMap.get("x").get_label() in ["entity", "relation", "attribute"]:
+                    if not conceptMap.get("x").get_label().name() in ["entity", "relation", "attribute"]:
                         list_concept.append(conceptMap.get("x"))
 
         # define the new attribute
@@ -190,9 +194,9 @@ def def_attr_type(
         # make existing types own the new attribute
         for concept in list_concept:
             with session.transaction(TransactionType.READ) as read_transaction:
-                concept_sup_label = concept.as_remote(read_transaction).get_supertype().get_label()
+                concept_sup_label = concept.as_remote(read_transaction).get_supertype().get_label().name()
             with session.transaction(TransactionType.WRITE) as write_transaction:
-                query_define_owns = "define {0} sub {1},".format(concept.get_label(), concept_sup_label)
+                query_define_owns = "define {0} sub {1},".format(concept.get_label().name(), concept_sup_label)
                 if concept.is_attribute_type():
                     valuetype = str(concept.get_value_type()).split(".")[1].lower()
                     query_define_owns += "value " + valuetype + ", "
@@ -215,7 +219,9 @@ def get_type_owns(
     thingType,
     client=None,
     host="localhost",
-    port="1729"):
+    port="1729",
+    parallelisation=2
+    ):
     '''@usage get the attribute types owned by thingType
     @param database: the database, string
     @param thingType: the thingType for which to retrieve attributes, string
@@ -229,18 +235,18 @@ def get_type_owns(
     dict_out = {}
 
     if client is None:
-        client = GraknClient.core(host+":"+port)
+        client = Grakn.core_client(address=host+":"+port,parallelisation=parallelisation)
     with client.session(database, SessionType.SCHEMA) as session:
         with session.transaction(TransactionType.READ) as read_transaction:
             iterator_conceptMap = read_transaction.query().match(query_thingType)
             concept = next(iterator_conceptMap).get("x")
             iterator_attr = concept.as_remote(read_transaction).get_owns(value_type=None, keys_only=False)
             for attrtype in iterator_attr:
-                dict_out[attrtype.get_label()] = str(attrtype.get_value_type()).split(".")[1].lower()
+                dict_out[attrtype.get_label().name()] = str(attrtype.get_value_type()).split(".")[1].lower()
             iterator_key = concept.as_remote(read_transaction).get_owns(value_type=None, keys_only=True)
             iterator_key = py_dev_utils.check_whether_iterator_empty(iterator_key)
             if not iterator_key is None:
-                dict_out["@key"] = next(iterator_key).get_label()
+                dict_out["@key"] = next(iterator_key).get_label().name()
     client.close()
     return dict_out
 
@@ -254,7 +260,9 @@ def def_rel_type(
     client=None,
     return_client=False,
     host="localhost",
-    port="1729"):
+    port="1729",
+    parallelisation=2
+    ):
     '''@usage: add a new relationtype to the schema
     @param database: the name of the database. string
     @param new_rel_label: the label of the new relation type. string
@@ -275,7 +283,7 @@ def def_rel_type(
     '''
 
     if client is None:
-        client =  GraknClient.core(host+":"+port)
+        client =  Grakn.core_client(address=host+":"+port,parallelisation=parallelisation)
     with client.session(database, SessionType.SCHEMA) as session:
         # check if any root types included
         for role_label in dict_role_players.keys():
@@ -287,7 +295,7 @@ def def_rel_type(
                         query_sub = "match $x sub {}; get $x;".format(root_type)
                         iterator_conceptMap = read_transaction.query().match(query_sub)
                         for conceptMap in iterator_conceptMap:
-                            dict_role_players[role_label]["role_players"].append(conceptMap.get("x").get_label())
+                            dict_role_players[role_label]["role_players"].append(conceptMap.get("x").get_label().name())
                     # remove the root type from the role players
                     idx = dict_role_players[role_label]["role_players"].index(root_type)
                     dict_role_players[role_label]["role_players"].pop(idx)
@@ -310,7 +318,7 @@ def def_rel_type(
                 # get sup
                 with session.transaction(TransactionType.READ) as read_transaction:
                     role_player_concept = read_transaction.concepts().get_thing_type(role_player_label)
-                    rp_sup_label = role_player_concept.as_remote(read_transaction).get_supertype().get_label()
+                    rp_sup_label = role_player_concept.as_remote(read_transaction).get_supertype().get_label().name()
                 query_define_plays = "define {0} sub {1}, plays {2}:{3};".format(role_player_label, rp_sup_label, new_rel_label, role_label)
                 with session.transaction(TransactionType.WRITE) as write_transaction:
                     if verbose:
@@ -328,7 +336,9 @@ def get_type_plays(
     thingType,
     client=None,
     host="localhost",
-    port="1729"):
+    port="1729",
+    parallelisation=2
+    ):
     '''@usage get the roles played by thingType
     @param database: the database, string
     @param thingType: the thingType for which to retrieve attributes, string
@@ -341,15 +351,19 @@ def get_type_plays(
     list_out = []
 
     if client is None:
-        client = GraknClient.core(host+":"+port)
+        client = Grakn.core_client(address=host+":"+port,parallelisation=parallelisation)
     with client.session(database, SessionType.SCHEMA) as session:
         with session.transaction(TransactionType.READ) as read_transaction:
             iterator_conceptMap = read_transaction.query().match(query_thingType)
             concept = next(iterator_conceptMap).get("x")
             iterator_roletype = concept.as_remote(read_transaction).get_plays()
-            for roletype in iterator_roletype:
-                list_out.append(roletype.get_scoped_label())
+            for roletype in iterator_roletype:         
+                list_out.append(roletype.get_label().scoped_name())
     client.close()
+    
+    # print("list_out")
+    # print(list_out)
+
     list_out.sort()
     return list_out
 
@@ -363,7 +377,8 @@ def insert_data(
     client=None,
     return_client=False,
     host="localhost",
-    port="1729"):
+    port="1729",
+    parallelisation=2):
     '''
     @param database: the database to intialise, string
     @param gql_data: path to data, string
@@ -376,7 +391,7 @@ def insert_data(
     @param port, the port, string
     '''
     if client is None:
-        client = GraknClient.core(host+":"+port)
+        client = Grakn.core_client(address=host+":"+port,parallelisation=parallelisation)
     if parse_lines:
         f = open(gql_data, "r")
         with client.session(database, SessionType.DATA) as session:
@@ -414,7 +429,8 @@ def ls_instances(
     client=None,
     return_client=False,
     host="localhost",
-    port="1729"):
+    port="1729",
+    parallelisation=2):
     '''@usage print the top n instances of each root type, along with an attribute and a relation.
               useful for getting a peak into the data
     @param database: the database to intialise, string
@@ -440,7 +456,7 @@ def ls_instances(
     list_query_match = [query_match + get_clause for query_match in list_query_match]
 
     if client is None:
-        client = GraknClient.core(host+":"+port)
+        client = Grakn.core_client(address=host+":"+port,parallelisation=parallelisation)
     with client.session(database, SessionType.DATA) as session:
         with session.transaction(TransactionType.READ) as read_transaction:
             for i in range(len(list_query_match)):
@@ -456,21 +472,21 @@ def ls_instances(
                         dict_concept = conceptMap.map()
                         concept = dict_concept["x"]
                         iid = concept.get_iid()
-                        type_label = concept.get_type().get_label()
+                        type_label = concept.get_type().get_label().name()
                         line_print = "$x iid {0} isa {1}; ".format(iid, type_label)
                         if print_attributes:
                             concept_attr = dict_concept["attr"]
                             attr_value = str(concept_attr.get_value())
-                            attr_type_label = concept_attr.get_type().get_label()
+                            attr_type_label = concept_attr.get_type().get_label().name()
                             line_print += "$attr {0} isa {1}; ".format(attr_value, attr_type_label)
                         if print_relations:
                             # relation
                             concept_rel = dict_concept["rel"]
                             rel_iid = concept_rel.get_iid()
-                            rel_type_label = concept_rel.get_type().get_label()
+                            rel_type_label = concept_rel.get_type().get_label().name()
                             # role
                             concept_role = dict_concept["role"]
-                            role_label = concept_role.get_label()
+                            role_label = concept_role.get_label().name()
                             line_print += "$rel iid {0} ({1}:$x) isa {2}; ".format(rel_iid, role_label, rel_type_label)
 
                         print(line_print)
@@ -491,7 +507,8 @@ def modify_things(
     args=None,
     client=None,
     host="localhost",
-    port="1729"):
+    port="1729",
+    parallelisation=2):
     '''@usage: iterate over all non-root things matching query, calling thing_modifier
     @param database: the name of the database. string
     @param thing_modifier: a function that takes a write transaction and a thing as first and second argument.
@@ -506,7 +523,7 @@ def modify_things(
 
     list_out = []
     if client is None:
-        client = GraknClient.core(host+":"+port)
+        client = Grakn.core_client(address=host+":"+port,parallelisation=parallelisation)
     with client.session(database, SessionType.DATA) as session:
         with session.transaction(TransactionType.READ) as read_transaction:
             iterator_conceptMap = read_transaction.query().match(query_match)

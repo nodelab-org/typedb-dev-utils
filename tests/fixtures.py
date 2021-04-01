@@ -18,6 +18,6 @@ def db_client(database_params):
         database_params["database"],
         gql_schema=database_params["gql_schema"], 
         parse_lines=False)
-    yield GraknClient.core(database_params["host"]+":"+database_params["port"])
+    yield Grakn.core_client(database_params["host"]+":"+database_params["port"])
     # tear down
     gradevils.del_db(database_params["database"])
