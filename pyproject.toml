@@ -32,7 +32,6 @@ include = [
 
 [tool.poetry.dependencies]
 python = "^3.7"  # Compatible python versions must be declared here
-toml = "^0.9"
 # Dependencies with extras
 # requests = { version = "^2.13", extras = [ "security" ] }
 grakn-client = "2.0.0"
