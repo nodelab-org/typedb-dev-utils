@@ -7,7 +7,7 @@ from .fixtures import *
 # variables
 
 # tests
-def test_init_db_1(database_params, db_client):    
+def test_init_db_1(database_params, db_client):
     assert db_client.databases().contains(database_params["database"])
 
 def test_init_db_2(database_params, db_client):
@@ -60,7 +60,7 @@ def test_insert_data(database_params, db_client):
 
     query_match_entity = "match $x isa entity; $x has UID $attr_val; get $x, $attr_val;"
     query_match_relation = "match $x isa relation; get $x;"
-    
+
     with client.session(database_params["database"], SessionType.DATA) as session:
         with session.transaction(TransactionType.READ) as read_transaction:
             iterator_conceptMap_entity = read_transaction.query().match(query_match_entity)
@@ -80,17 +80,51 @@ def test_ls_instances(database_params, db_client):
     assert True
 
 
-def test_modify_things(database_params,db_client):
-    def thing_modifier_test(write_transaction,thing):
-        print(thing.get_type().get_label())
+def test_modify_each_thing(database_params, db_client):
+    new_attr_label = "identifier"
+    db_client = gradevils.insert_data(database_params["database"], database_params["gql_data"], parse_lines=True, client=db_client, return_client = True)
+    # modify schema: add new attribute to person entitytype
+    db_client = gradevils.def_attr_type(
+        database = database_params["database"],
+        new_attr_label=new_attr_label,
+        new_attr_value="string",
+        sup_label="attribute",
+        is_key=False,
+        thingTypes = ["person","house"],
+        rootTypes = None,
+        verbose=False,
+        client=db_client,
+        return_client=True,
+        host="localhost",
+        port="1729",
+        parallelisation=4)
 
-    gradevils.modify_things(
-        database_params["database"],
-        query_match = "match $x isa thing; get $x;",
+    query_match =  "match $x isa person; "
+
+    def thing_modifier_test(write_transaction, thing, new_attr_label):
+        query = "match $x iid {0}; insert $x has {1} '{2}';".format(thing.get_iid(), new_attr_label, str(uuid.uuid4()))
+        print("write query: {}".format(query))
+        write_transaction.query().insert(query)
+        return None
+
+    db_client = gradevils.modify_each_thing(
+        database = database_params["database"],
+        query_match = query_match,
         thing_modifier = thing_modifier_test,
-        args=None,
+        args=[new_attr_label],
         host=database_params["host"],
-        port=database_params["port"], 
-        client=db_client)
+        port=database_params["port"],
+        client=db_client,
+        return_client=True,
+        batch_size=5)
 
-    assert True
+    # verify that the instances have been changes
+    with db_client.session(database_params["database"], SessionType.DATA) as session:
+        with session.transaction(TransactionType.READ) as read_transaction:
+            iterator_conceptMap = read_transaction.query().match("match $x isa person, has identifier $y; get $y; ")
+            list_dict_concept = [conceptMap.map() for conceptMap in iterator_conceptMap]
+            assert len(list_dict_concept)
+            for dict_concept in list_dict_concept:
+                attr_val = dict_concept["y"].get_value()
+                print(attr_val)
+                assert type(attr_val) is str and len(attr_val)

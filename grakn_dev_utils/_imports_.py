@@ -1,5 +1,5 @@
 
-from .grakn_dev_utils import del_db, init_db, ls_types, def_attr_type, get_type_owns, def_rel_type, get_type_plays, insert_data, ls_instances, modify_things
+from .grakn_dev_utils import del_db, init_db, ls_types, def_attr_type, get_type_owns, def_rel_type, get_type_plays, insert_data, ls_instances, modify_each_thing
 
 __all__ = [
     "del_db",
@@ -9,7 +9,7 @@ __all__ = [
     "get_type_owns",
     "def_rel_type",
     "get_type_plays",
-    "insert_data", 
+    "insert_data",
     "ls_instances",
-    "modify_things"
+    "modify_each_thing"
 ]

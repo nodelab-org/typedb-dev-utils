@@ -4,13 +4,13 @@ import py_dev_utils
 
 
 def del_db(
-    database, 
-    verbose=False, 
+    database,
+    verbose=False,
     client=None,
     return_client=False,
-    host="localhost", 
+    host="localhost",
     port="1729",
-    parallelisation=2):
+    parallelisation=4):
     '''@usage delete a grakn database
     @param database: the database to delete, string
     @param verbose: whether to print databases after deletion, bool
@@ -29,12 +29,12 @@ def del_db(
     if verbose:
         print("deleted " + database)
         print("databases: {}".format([db.name() for db in client.databases().all()]))
-       
+
     if return_client:
-        return client 
+        return client
     else:
         client.close
-        return None 
+        return None
 
 def init_db(
     database,
@@ -45,7 +45,7 @@ def init_db(
     return_client=False,
     host="localhost",
     port="1729",
-    parallelisation=2):
+    parallelisation=4):
     '''
     @param database: the database to intialise, string
     @param gql_schema: path to schema, string
@@ -81,9 +81,9 @@ def init_db(
     if verbose:
         print("initiated " + database)
         print("databases: {}".format([db.name() for db in client.databases().all()]))
-    
+
     if return_client:
-        return client 
+        return client
     else:
         client.close
         return None
@@ -96,7 +96,7 @@ def ls_types(
     return_client=False,
     host="localhost",
     port="1729",
-    parallelisation=2):
+    parallelisation=4):
     '''@usage print the types in a schema. Useful for getting a peak into the schema.
     @param database: the database to intialise, string
     @param n: the max number of each root type to print, default all
@@ -127,7 +127,7 @@ def ls_types(
                         if k==n:
                             break
     if return_client:
-        return client 
+        return client
     else:
         client.close
         return None
@@ -145,12 +145,12 @@ def def_attr_type(
     return_client=False,
     host="localhost",
     port="1729",
-    parallelisation=2):
+    parallelisation=4):
     '''@usage: add a new attribute to all or subset of thingTypes
     @param database: the name of the database. string
     @param new_attr_label: the label of the new attribute. string
     @param new_attr_value: the value type of the new attribute, one of "long", "double", "string", "boolean" or "datetime". string
-    @param sup: the supertype form which the new attributetype will inherit
+    @param sup_label: the attribute supertype  which the new attributetype will inherit
     @param is_key: is the attribute a key, bool
     @param thingTypes: list of thingTypes which, with their subtypes, will own the attribute. if rootTypes is provided will be ignored
     @param rootTypes: list of rootTypes whose subtypes will own the attribute. Trumps thingTypes
@@ -165,9 +165,9 @@ def def_attr_type(
         raise ValueError("One and only one of thingTypes or rootTypes must be provided")
     if thingTypes is None and rootTypes is None:
         raise ValueError("One of thingTypes or rootTypes must be provided")
-    
+
     if not thingTypes is None:
-        list_query_match = ["match $x type {}; get $x;".format(thingType) for thingType in thingTypes]    
+        list_query_match = ["match $x type {}; get $x;".format(thingType) for thingType in thingTypes]
     elif not rootTypes is None:
         list_query_match = ["match $x sub! {}; get $x;".format(rootType) for rootType in rootTypes]
     query_define_attr = "define {0} sub {1}, value {2};".format(new_attr_label, sup_label, new_attr_value)
@@ -209,7 +209,7 @@ def def_attr_type(
                 write_transaction.query().define(query_define_owns)
                 write_transaction.commit()
     if return_client:
-        return client 
+        return client
     else:
         client.close
         return None
@@ -220,7 +220,7 @@ def get_type_owns(
     client=None,
     host="localhost",
     port="1729",
-    parallelisation=2
+    parallelisation=4
     ):
     '''@usage get the attribute types owned by thingType
     @param database: the database, string
@@ -261,7 +261,7 @@ def def_rel_type(
     return_client=False,
     host="localhost",
     port="1729",
-    parallelisation=2
+    parallelisation=4
     ):
     '''@usage: add a new relationtype to the schema
     @param database: the name of the database. string
@@ -326,7 +326,7 @@ def def_rel_type(
                     write_transaction.query().define(query_define_plays)
                     write_transaction.commit()
     if return_client:
-        return client 
+        return client
     else:
         client.close
         return None
@@ -337,7 +337,7 @@ def get_type_plays(
     client=None,
     host="localhost",
     port="1729",
-    parallelisation=2
+    parallelisation=4
     ):
     '''@usage get the roles played by thingType
     @param database: the database, string
@@ -357,10 +357,10 @@ def get_type_plays(
             iterator_conceptMap = read_transaction.query().match(query_thingType)
             concept = next(iterator_conceptMap).get("x")
             iterator_roletype = concept.as_remote(read_transaction).get_plays()
-            for roletype in iterator_roletype:         
+            for roletype in iterator_roletype:
                 list_out.append(roletype.get_label().scoped_name())
     client.close()
-    
+
     # print("list_out")
     # print(list_out)
 
@@ -378,7 +378,7 @@ def insert_data(
     return_client=False,
     host="localhost",
     port="1729",
-    parallelisation=2):
+    parallelisation=4):
     '''
     @param database: the database to intialise, string
     @param gql_data: path to data, string
@@ -414,7 +414,7 @@ def insert_data(
     if verbose:
         print("databases: {}".format(client.databases().all()))
     if return_client:
-        return client 
+        return client
     else:
         client.close
         return None
@@ -430,7 +430,7 @@ def ls_instances(
     return_client=False,
     host="localhost",
     port="1729",
-    parallelisation=2):
+    parallelisation=4):
     '''@usage print the top n instances of each root type, along with an attribute and a relation.
               useful for getting a peak into the data
     @param database: the database to intialise, string
@@ -494,44 +494,62 @@ def ls_instances(
                         if k==n:
                             break
     if return_client:
-        return client 
+        return client
     else:
         client.close
         return None
 
 
-def modify_things(
+def modify_each_thing(
     database,
     query_match = "match $x isa thing; get $x;",
-    thing_modifier = lambda write_transaction, thing : None,
+    thing_modifier = lambda write_transaction, thing : print(thing.get_type().get_label().name()),
     args=None,
     client=None,
+    return_client=False,
     host="localhost",
     port="1729",
-    parallelisation=2):
-    '''@usage: iterate over all non-root things matching query, calling thing_modifier
+    batch_size=50,
+    parallelisation=4):
+    '''@usage: iterate over all non-root things matching query, calling thing_modifier.
+            This makes it possibly to modify things individually, e.g. to assign a unique identifier to each thing.
     @param database: the name of the database. string
+    @param query_match: a data match query to retrieve all things  which are to be modified. The things must be bound to $x.
     @param thing_modifier: a function that takes a write transaction and a thing as first and second argument.
                 Additional positional arguments can be passed through args.
-                Optionally returns value
+                Optionally returns value.
+                The function should not commit changes, as this is done in batches.
     @param args: a list of additional positional arguments to pass to thing_modifier after thing
     @param client: an active grakn client
-    @param host: the host grakn is running on
-    @param port: the port grakn is running on
+    @param return_client: return grakn client, if not, client is closed
+    @param host: the host on which typedb is running
+    @param port: the port on the host on which typedb is running
+    @param batch_size: number of transactions before each commit. Recommended <100
     @return a list of values returned by thing_modifier (if None returned, list of None)
     '''
 
-    list_out = []
+    #list_out = []
     if client is None:
         client = Grakn.core_client(address=host+":"+port,parallelisation=parallelisation)
     with client.session(database, SessionType.DATA) as session:
         with session.transaction(TransactionType.READ) as read_transaction:
             iterator_conceptMap = read_transaction.query().match(query_match)
-            for conceptMap in iterator_conceptMap:
-                with session.transaction(TransactionType.WRITE) as write_transaction:
-                    thing = conceptMap.get("x")
-                    result = thing_modifier(write_transaction, thing, *args) if args else list_out.append(thing_modifier(write_transaction,thing))
-                    list_out.append(result)
+            k = 1
+            write_transaction = session.transaction(TransactionType.WRITE)
+            while True:
+                try:
+                    conceptMap = next(iterator_conceptMap)
+                    result = thing_modifier(write_transaction, conceptMap.get("x"), *args) if args else thing_modifier(write_transaction,conceptMap.get("x"))
+                    #list_out.append(result)
+                except:
+                    # iterator is exhausted
                     write_transaction.commit()
-    client.close
-    return list_out
+                    break
+                if batch_size%k == 0:
+                    write_transaction.commit()
+                    write_transaction = session.transaction(TransactionType.WRITE)
+                k+=1
+    if not return_client:
+        client.close
+    else:
+        return client
