@@ -538,26 +538,21 @@ def modify_each_thing(
             if not iterator_conceptMap is None:
                 list_iid = [conceptMap.get("x").get_iid() for conceptMap in iterator_conceptMap]
             # read transaction closes
-        # session closes
-    if list_iid:
-        k = 1
-        session = client.session(database, SessionType.DATA)
-        write_transaction = session.transaction(TransactionType.WRITE)
-        for iid in list_iid:
-            f_write(write_transaction, iid, *args) if args else thing_modifier(write_transaction,iid)
-            if k%batch_size == 0:
-                print(f"inserts: {k}")
+
+        if list_iid:
+            k = 1
+            write_transaction = session.transaction(TransactionType.WRITE)
+            for iid in list_iid:
+                f_write(write_transaction, iid, *args) if args else thing_modifier(write_transaction,iid)
+                if k%batch_size == 0:
+                    print(f"inserts: {k}")
+                    write_transaction.commit()
+                    write_transaction = session.transaction(TransactionType.WRITE)
+                k+=1
+            if write_transaction.is_open():
                 write_transaction.commit()
-                session.close()
-                session = client.session(database, SessionType.DATA)
-                write_transaction = session.transaction(TransactionType.WRITE)
-            k+=1
-        if write_transaction.is_open():
-            write_transaction.commit()
-        if session.is_open():
-            session.close()
-    else:
-        print("no things were returned by query_match")
+        else:
+            print("no things were returned by query_match")
         # session closes
     if not return_client:
         client.close
