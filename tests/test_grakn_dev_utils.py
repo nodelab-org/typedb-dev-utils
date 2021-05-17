@@ -101,8 +101,8 @@ def test_modify_each_thing(database_params, db_client):
 
     query_match =  "match $x isa person; "
 
-    def thing_modifier_test(write_transaction, thing, new_attr_label):
-        query = "match $x iid {0}; insert $x has {1} '{2}';".format(thing.get_iid(), new_attr_label, str(uuid.uuid4()))
+    def f_write_test(write_transaction, iid, new_attr_label):
+        query = "match $x iid {0}; insert $x has {1} '{2}';".format(iid, new_attr_label, str(uuid.uuid4()))
         print("write query: {}".format(query))
         write_transaction.query().insert(query)
         return None
@@ -110,13 +110,13 @@ def test_modify_each_thing(database_params, db_client):
     db_client = gradevils.modify_each_thing(
         database = database_params["database"],
         query_match = query_match,
-        thing_modifier = thing_modifier_test,
+        f_write = f_write_test,
         args=[new_attr_label],
         host=database_params["host"],
         port=database_params["port"],
         client=db_client,
         return_client=True,
-        batch_size=5)
+        batch_size=2)
 
     # verify that the instances have been changes
     with db_client.session(database_params["database"], SessionType.DATA) as session:

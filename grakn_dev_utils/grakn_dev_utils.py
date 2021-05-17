@@ -10,7 +10,7 @@ def del_db(
     return_client=False,
     host="localhost",
     port="1729",
-    parallelisation=4):
+    parallelisation=2):
     '''@usage delete a grakn database
     @param database: the database to delete, string
     @param verbose: whether to print databases after deletion, bool
@@ -45,7 +45,7 @@ def init_db(
     return_client=False,
     host="localhost",
     port="1729",
-    parallelisation=4):
+    parallelisation=2):
     '''
     @param database: the database to intialise, string
     @param gql_schema: path to schema, string
@@ -96,7 +96,7 @@ def ls_types(
     return_client=False,
     host="localhost",
     port="1729",
-    parallelisation=4):
+    parallelisation=2):
     '''@usage print the types in a schema. Useful for getting a peak into the schema.
     @param database: the database to intialise, string
     @param n: the max number of each root type to print, default all
@@ -145,7 +145,7 @@ def def_attr_type(
     return_client=False,
     host="localhost",
     port="1729",
-    parallelisation=4):
+    parallelisation=2):
     '''@usage: add a new attribute to all or subset of thingTypes
     @param database: the name of the database. string
     @param new_attr_label: the label of the new attribute. string
@@ -220,7 +220,7 @@ def get_type_owns(
     client=None,
     host="localhost",
     port="1729",
-    parallelisation=4
+    parallelisation=2
     ):
     '''@usage get the attribute types owned by thingType
     @param database: the database, string
@@ -261,7 +261,7 @@ def def_rel_type(
     return_client=False,
     host="localhost",
     port="1729",
-    parallelisation=4
+    parallelisation=2
     ):
     '''@usage: add a new relationtype to the schema
     @param database: the name of the database. string
@@ -337,7 +337,7 @@ def get_type_plays(
     client=None,
     host="localhost",
     port="1729",
-    parallelisation=4
+    parallelisation=2
     ):
     '''@usage get the roles played by thingType
     @param database: the database, string
@@ -378,7 +378,7 @@ def insert_data(
     return_client=False,
     host="localhost",
     port="1729",
-    parallelisation=4):
+    parallelisation=2):
     '''
     @param database: the database to intialise, string
     @param gql_data: path to data, string
@@ -430,7 +430,7 @@ def ls_instances(
     return_client=False,
     host="localhost",
     port="1729",
-    parallelisation=4):
+    parallelisation=2):
     '''@usage print the top n instances of each root type, along with an attribute and a relation.
               useful for getting a peak into the data
     @param database: the database to intialise, string
@@ -503,31 +503,31 @@ def ls_instances(
 def modify_each_thing(
     database,
     query_match = "match $x isa thing; get $x;",
-    thing_modifier = lambda write_transaction, thing : print(thing.get_type().get_label().name()),
+    f_write = lambda write_transaction, iid : None,
     args=None,
     client=None,
     return_client=False,
     host="localhost",
     port="1729",
     batch_size=50,
-    parallelisation=4):
+    parallelisation=2):
     '''@usage: iterate over all non-root things matching query, calling thing_modifier.
             This makes it possibly to modify things individually, e.g. to assign a unique identifier to each thing.
     @param database: the name of the database. string
     @param query_match: a data match query to retrieve all things  which are to be modified. The things must be bound to $x.
-    @param thing_modifier: a function that takes a write transaction and a thing as first and second argument.
+                        If no matches a found, a message is printed
+    @param f_write: a function that takes a write transaction and an iid as first and second argument.
                 Additional positional arguments can be passed through args.
-                Optionally returns value.
-                The function should not commit changes, as this is done in batches.
+                The function should NOT commit changes, as this is done in batches.
     @param args: a list of additional positional arguments to pass to thing_modifier after thing
     @param client: an active grakn client
     @param return_client: return grakn client, if not, client is closed
     @param host: the host on which typedb is running
     @param port: the port on the host on which typedb is running
-    @param batch_size: number of transactions before each commit. Recommended <100
-    @return a list of values returned by thing_modifier (if None returned, list of None)
+    @param batch_size: number of transactions before each write commit. Recommended <100
+    @return None
     '''
-
+    list_iid = []
     #list_out = []
     if client is None:
         client = Grakn.core_client(address=host+":"+port,parallelisation=parallelisation)
@@ -536,32 +536,22 @@ def modify_each_thing(
             iterator_conceptMap = read_transaction.query().match(query_match)
             iterator_conceptMap = py_dev_utils.check_whether_iterator_empty(iterator_conceptMap)
             if not iterator_conceptMap is None:
-                k = 1
-                write_transaction = session.transaction(TransactionType.WRITE)
-                for conceptMap in iterator_conceptMap:
-                    thing_modifier(write_transaction, conceptMap.get("x"), *args) if args else thing_modifier(write_transaction,conceptMap.get("x"))
-                    if batch_size%k == 0:
-                        write_transaction.commit()
-                        write_transaction = session.transaction(TransactionType.WRITE)
-                    k+=1
-                if write_transaction.is_open():
-                    write_transaction.commit() 
-
-
-
-                # while True:
-                #     try:
-                #         conceptMap = next(iterator_conceptMap)
-                #         thing_modifier(write_transaction, conceptMap.get("x"), *args) if args else thing_modifier(write_transaction,conceptMap.get("x"))
-                #         #list_out.append(result)
-                #     except:
-                #         # iterator is exhausted
-                #         write_transaction.commit()
-                #         break
-                #     if batch_size%k == 0:
-                #         write_transaction.commit()
-                #         write_transaction = session.transaction(TransactionType.WRITE)
-                #     k+=1
+                list_iid = [conceptMap.get("x").get_iid() for conceptMap in iterator_conceptMap]
+            # read transaction closes
+        if list_iid:
+            k = 1
+            write_transaction = session.transaction(TransactionType.WRITE)
+            for iid in list_iid:
+                f_write(write_transaction, iid, *args) if args else thing_modifier(write_transaction,iid)
+                if batch_size%k == 0:
+                    write_transaction.commit()
+                    write_transaction = session.transaction(TransactionType.WRITE)
+                k+=1
+            if write_transaction.is_open():
+                write_transaction.commit()
+        else:
+            print("no things were returned by query_match")
+        # session closes
     if not return_client:
         client.close
     else:
