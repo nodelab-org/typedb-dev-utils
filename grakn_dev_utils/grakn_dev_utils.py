@@ -534,21 +534,34 @@ def modify_each_thing(
     with client.session(database, SessionType.DATA) as session:
         with session.transaction(TransactionType.READ) as read_transaction:
             iterator_conceptMap = read_transaction.query().match(query_match)
-            k = 1
-            write_transaction = session.transaction(TransactionType.WRITE)
-            while True:
-                try:
-                    conceptMap = next(iterator_conceptMap)
-                    result = thing_modifier(write_transaction, conceptMap.get("x"), *args) if args else thing_modifier(write_transaction,conceptMap.get("x"))
-                    #list_out.append(result)
-                except:
-                    # iterator is exhausted
-                    write_transaction.commit()
-                    break
-                if batch_size%k == 0:
-                    write_transaction.commit()
-                    write_transaction = session.transaction(TransactionType.WRITE)
-                k+=1
+            iterator_conceptMap = py_dev_utils.check_whether_iterator_empty(iterator_conceptMap)
+            if not iterator_conceptMap is None:
+                k = 1
+                write_transaction = session.transaction(TransactionType.WRITE)
+                for conceptMap in iterator_conceptMap:
+                    thing_modifier(write_transaction, conceptMap.get("x"), *args) if args else thing_modifier(write_transaction,conceptMap.get("x"))
+                    if batch_size%k == 0:
+                        write_transaction.commit()
+                        write_transaction = session.transaction(TransactionType.WRITE)
+                    k+=1
+                if write_transaction.is_open():
+                    write_transaction.commit() 
+
+
+
+                # while True:
+                #     try:
+                #         conceptMap = next(iterator_conceptMap)
+                #         thing_modifier(write_transaction, conceptMap.get("x"), *args) if args else thing_modifier(write_transaction,conceptMap.get("x"))
+                #         #list_out.append(result)
+                #     except:
+                #         # iterator is exhausted
+                #         write_transaction.commit()
+                #         break
+                #     if batch_size%k == 0:
+                #         write_transaction.commit()
+                #         write_transaction = session.transaction(TransactionType.WRITE)
+                #     k+=1
     if not return_client:
         client.close
     else:
