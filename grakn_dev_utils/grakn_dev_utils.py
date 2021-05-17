@@ -545,7 +545,7 @@ def modify_each_thing(
         write_transaction = session.transaction(TransactionType.WRITE)
         for iid in list_iid:
             f_write(write_transaction, iid, *args) if args else thing_modifier(write_transaction,iid)
-            if batch_size%k == 0:
+            if k%batch_size == 0:
                 print(f"inserts: {k}")
                 write_transaction.commit()
                 session.close()
