@@ -1,4 +1,4 @@
-from grakn.client import *
+from typedb.client import *
 import py_dev_utils
 #import itertools
 
@@ -21,7 +21,7 @@ def del_db(
     @return None
     '''
     if client is None:
-        client = Grakn.core_client(address=host+":"+port, parallelisation=parallelisation)
+        client = TypeDB.core_client(address=host+":"+port, parallelisation=parallelisation)
     if client.databases().contains(database):
         client.databases().get(database).delete()
     else:
@@ -57,7 +57,7 @@ def init_db(
     @param port, the port, string
     '''
     if client is None:
-        client = Grakn.core_client(address=host+":"+port, parallelisation=parallelisation)
+        client = TypeDB.core_client(address=host+":"+port, parallelisation=parallelisation)
     client.databases().create(database)
     if not gql_schema is None:
         if parse_lines:
@@ -110,7 +110,7 @@ def ls_types(
     list_query_match = ["match $x sub {}; get $x;".format(rootType) for rootType in rootTypes]
 
     if client is None:
-        client = Grakn.core_client(address=host+":"+port, parallelisation=parallelisation)
+        client = TypeDB.core_client(address=host+":"+port, parallelisation=parallelisation)
     with client.session(database, SessionType.SCHEMA) as session:
         with session.transaction(TransactionType.READ) as read_transaction:
             for i in range(len(list_query_match)):
@@ -175,7 +175,7 @@ def def_attr_type(
 
     # get all the types in the schema
     if client is None:
-        client = Grakn.core_client(address=host+":"+port,parallelisation=parallelisation)
+        client = TypeDB.core_client(address=host+":"+port,parallelisation=parallelisation)
     with client.session(database, SessionType.SCHEMA) as session:
         with session.transaction(TransactionType.READ) as read_transaction:
             for query_match in list_query_match:
@@ -235,7 +235,7 @@ def get_type_owns(
     dict_out = {}
 
     if client is None:
-        client = Grakn.core_client(address=host+":"+port,parallelisation=parallelisation)
+        client = TypeDB.core_client(address=host+":"+port,parallelisation=parallelisation)
     with client.session(database, SessionType.SCHEMA) as session:
         with session.transaction(TransactionType.READ) as read_transaction:
             iterator_conceptMap = read_transaction.query().match(query_thingType)
@@ -283,7 +283,7 @@ def def_rel_type(
     '''
 
     if client is None:
-        client =  Grakn.core_client(address=host+":"+port,parallelisation=parallelisation)
+        client =  TypeDB.core_client(address=host+":"+port,parallelisation=parallelisation)
     with client.session(database, SessionType.SCHEMA) as session:
         # check if any root types included
         for role_label in dict_role_players.keys():
@@ -351,7 +351,7 @@ def get_type_plays(
     list_out = []
 
     if client is None:
-        client = Grakn.core_client(address=host+":"+port,parallelisation=parallelisation)
+        client = TypeDB.core_client(address=host+":"+port,parallelisation=parallelisation)
     with client.session(database, SessionType.SCHEMA) as session:
         with session.transaction(TransactionType.READ) as read_transaction:
             iterator_conceptMap = read_transaction.query().match(query_thingType)
@@ -391,7 +391,7 @@ def insert_data(
     @param port, the port, string
     '''
     if client is None:
-        client = Grakn.core_client(address=host+":"+port,parallelisation=parallelisation)
+        client = TypeDB.core_client(address=host+":"+port,parallelisation=parallelisation)
     if parse_lines:
         f = open(gql_data, "r")
         with client.session(database, SessionType.DATA) as session:
@@ -456,7 +456,7 @@ def ls_instances(
     list_query_match = [query_match + get_clause for query_match in list_query_match]
 
     if client is None:
-        client = Grakn.core_client(address=host+":"+port,parallelisation=parallelisation)
+        client = TypeDB.core_client(address=host+":"+port,parallelisation=parallelisation)
     with client.session(database, SessionType.DATA) as session:
         with session.transaction(TransactionType.READ) as read_transaction:
             for i in range(len(list_query_match)):
@@ -530,7 +530,7 @@ def modify_each_thing(
     list_iid = []
     #list_out = []
     if client is None:
-        client = Grakn.core_client(address=host+":"+port,parallelisation=parallelisation)
+        client = TypeDB.core_client(address=host+":"+port,parallelisation=parallelisation)
     with client.session(database, SessionType.DATA) as session:
         with session.transaction(TransactionType.READ) as read_transaction:
             iterator_conceptMap = read_transaction.query().match(query_match)

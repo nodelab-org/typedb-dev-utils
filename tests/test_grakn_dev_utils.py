@@ -1,6 +1,6 @@
 #from typing import type_check_only
 import grakn_dev_utils as gradevils
-from grakn.client import *
+from typedb.client import *
 import uuid
 from .fixtures import *
 

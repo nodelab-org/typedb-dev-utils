@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "grakn_dev_utils"
 version = "0.1.0"
-description = "functions for generating and deleting grakn databases"
+description = "functions for generating and deleting TypeDB databases"
 
 license = "Apache-2.0"
 
@@ -19,7 +19,7 @@ readme = 'README.md'  # Markdown files are supported
 repository = "https://github.com/JonThom/grakn-dev-utils"
 homepage = "https://github.com/JonThom/grakn-dev-utils"
 
-keywords = ['grakn', 'database', 'API']
+keywords = ['TypeDB', 'database', 'API']
 
 packages = [
     { include = "grakn_dev_utils/*.py" },
@@ -34,7 +34,6 @@ include = [
 python = "^3.7"  # Compatible python versions must be declared here
 # Dependencies with extras
 # requests = { version = "^2.13", extras = [ "security" ] }
-grakn-client = "^2.0.1"
 
 # setuptools = "^53.0.0"
 # Python specific dependencies with prereleases allowed
@@ -43,6 +42,7 @@ grakn-client = "^2.0.1"
 # cleo = { git = "https://github.com/sdispater/cleo.git", branch = "master" }
 
 py-dev-utils = {git = "https://github.com/JonThom/py-dev-utils.git"}
+typedb-client = "2.1.0"
 # Optional dependencies (extras)
 
 

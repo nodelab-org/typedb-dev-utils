@@ -43,27 +43,6 @@ toml = {version = "*", optional = true, markers = "extra == \"toml\""}
 toml = ["toml"]
 
 [[package]]
-name = "grakn-client"
-version = "2.0.1"
-description = "Grakn Client for Python"
-category = "main"
-optional = false
-python-versions = "*"
-
-[package.dependencies]
-grakn-protocol = "2.0.1"
-grpcio = "1.36.1"
-protobuf = "3.15.5"
-
-[[package]]
-name = "grakn-protocol"
-version = "2.0.1"
-description = "Grakn gRPC Protocol"
-category = "main"
-optional = false
-python-versions = "*"
-
-[[package]]
 name = "grpcio"
 version = "1.36.1"
 description = "HTTP/2-based RPC framework"
@@ -198,6 +177,27 @@ optional = false
 python-versions = ">=2.6, !=3.0.*, !=3.1.*, !=3.2.*"
 
 [[package]]
+name = "typedb-client"
+version = "2.1.0"
+description = "TypeDB Client for Python"
+category = "main"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+grpcio = "1.36.1"
+protobuf = "3.15.5"
+typedb-protocol = "2.1.0"
+
+[[package]]
+name = "typedb-protocol"
+version = "2.1.0"
+description = "TypeDB GRPC Protocol"
+category = "main"
+optional = false
+python-versions = "*"
+
+[[package]]
 name = "typing-extensions"
 version = "3.7.4.3"
 description = "Backported and Experimental Type Hints for Python 3.5+"
@@ -220,7 +220,7 @@ testing = ["pytest (>=3.5,!=3.7.3)", "pytest-checkdocs (>=1.2.3)", "pytest-flake
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"  # Compatible python versions must be declared here
-content-hash = "8c1a814c3c50da0422b87096a0815ab04acf1be37dccc2ca4e6d0b0e57cc4284"
+content-hash = "f8dd3130ac0916d7cc9285ef39fdd0533b928ff199ab539b4c1588d92344c488"
 
 [metadata.files]
 atomicwrites = [
@@ -285,12 +285,6 @@ coverage = [
     {file = "coverage-5.4-pp36-none-any.whl", hash = "sha256:c0ff1c1b4d13e2240821ef23c1efb1f009207cb3f56e16986f713c2b0e7cd37f"},
     {file = "coverage-5.4-pp37-none-any.whl", hash = "sha256:cd601187476c6bed26a0398353212684c427e10a903aeafa6da40c63309d438b"},
     {file = "coverage-5.4.tar.gz", hash = "sha256:6d2e262e5e8da6fa56e774fb8e2643417351427604c2b177f8e8c5f75fc928ca"},
-]
-grakn-client = [
-    {file = "grakn-client-2.0.1.tar.gz", hash = "sha256:18d4beda2bcd24350b1768ed47ae806e89dd9ed43411f876b411b9c84ca20c71"},
-]
-grakn-protocol = [
-    {file = "grakn-protocol-2.0.1.tar.gz", hash = "sha256:b6dfdecb76fce89ff9f31c93ecc9a7bff5e046047b56b3e1236070e0e47211ae"},
 ]
 grpcio = [
     {file = "grpcio-1.36.1-cp27-cp27m-macosx_10_10_x86_64.whl", hash = "sha256:e3a83c5db16f95daac1d96cf3c9018d765579b5a29bb336758d793028e729921"},
@@ -394,6 +388,12 @@ six = [
 toml = [
     {file = "toml-0.10.2-py2.py3-none-any.whl", hash = "sha256:806143ae5bfb6a3c6e736a764057db0e6a0e05e338b5630894a5f779cabb4f9b"},
     {file = "toml-0.10.2.tar.gz", hash = "sha256:b3bda1d108d5dd99f4a20d24d9c348e91c4db7ab1b749200bded2f839ccbe68f"},
+]
+typedb-client = [
+    {file = "typedb-client-2.1.0.tar.gz", hash = "sha256:0d902a94cee7cebe508121c47ca1e2053154e59ea4136fc19e4aafe62f4ebdd0"},
+]
+typedb-protocol = [
+    {file = "typedb-protocol-2.1.0.tar.gz", hash = "sha256:2699da4b5205c3d6fc15e5a51d6f4a213cbf1259db7d6117eafcdb64712f81b0"},
 ]
 typing-extensions = [
     {file = "typing_extensions-3.7.4.3-py2-none-any.whl", hash = "sha256:dafc7639cde7f1b6e1acc0f457842a83e722ccca8eef5270af2d74792619a89f"},
