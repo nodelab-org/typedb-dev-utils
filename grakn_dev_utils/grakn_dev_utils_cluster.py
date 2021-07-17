@@ -1,15 +1,15 @@
 from typedb.client import *
 import py_dev_utils
-#import itertools
 
-
-def del_db(
+def del_db_cluster(
     database,
+    username,
+    password, 
+    tls_root_ca_path,
+    addresses,
     verbose=False,
     client=None,
     return_client=False,
-    host="localhost",
-    port="1729",
     parallelisation=2):
     '''@usage delete a grakn database
     @param database: the database to delete, string
@@ -20,8 +20,14 @@ def del_db(
     @param port, the port, string
     @return None
     '''
+
+    credential = TypeDBCredential(username=username, password=password, tls_root_ca_path=tls_root_ca_path)
+
     if client is None:
-        client = TypeDB.core_client(address=host+":"+port, parallelisation=parallelisation)
+        client = TypeDB.cluster_client(
+            addresses = addresses,
+            credential = credential,
+            parallelisation=parallelisation)
     if client.databases().contains(database):
         client.databases().get(database).delete()
     else:
@@ -37,15 +43,18 @@ def del_db(
         return None
 
 
-def init_db(
+
+def init_db_cluster(
     database,
+    username,
+    password, 
+    tls_root_ca_path,
+    addresses,
     gql_schema=None,
     parse_lines=False,
     verbose=False,
     client=None,
     return_client=False,
-    host="localhost",
-    port="1729",
     parallelisation=2):
     '''
     @param database: the database to intialise, string
@@ -57,8 +66,13 @@ def init_db(
     @param host, the host, string
     @param port, the port, string
     '''
+    credential = TypeDBCredential(username=username, password=password, tls_root_ca_path=tls_root_ca_path)
+
     if client is None:
-        client = TypeDB.core_client(address=host+":"+port, parallelisation=parallelisation)
+        client = TypeDB.cluster_client(
+            addresses = addresses,
+            credential = credential,
+            parallelisation=parallelisation)
     client.databases().create(database)
     if not gql_schema is None:
         if parse_lines:
@@ -91,14 +105,17 @@ def init_db(
 
 
 
-def ls_types(
+
+def ls_types_cluster(
     database,
+    username,
+    password, 
+    tls_root_ca_path,
+    addresses,
     n=float("inf"),
     rootTypes=["entity","relation","attribute"],
     client=None,
     return_client=False,
-    host="localhost",
-    port="1729",
     parallelisation=2):
     '''@usage print the types in a schema. Useful for getting a peak into the schema.
     @param database: the database to intialise, string
@@ -110,10 +127,15 @@ def ls_types(
     @param port, the port, string
     '''
 
+    credential = TypeDBCredential(username=username, password=password, tls_root_ca_path=tls_root_ca_path)
+
     list_query_match = ["match $x sub {}; get $x;".format(rootType) for rootType in rootTypes]
 
     if client is None:
-        client = TypeDB.core_client(address=host+":"+port, parallelisation=parallelisation)
+        client = TypeDB.cluster_client(
+            addresses = addresses,
+            credential = credential,
+            parallelisation=parallelisation)
     with client.session(database, SessionType.SCHEMA) as session:
         with session.transaction(TransactionType.READ) as read_transaction:
             for i in range(len(list_query_match)):
@@ -135,8 +157,12 @@ def ls_types(
         client.close
         return None
 
-def def_attr_type(
+def def_attr_type_cluster(
     database,
+    username,
+    password, 
+    tls_root_ca_path,
+    addresses,
     new_attr_label,
     new_attr_value,
     sup_label="attribute",
@@ -146,8 +172,6 @@ def def_attr_type(
     verbose=False,
     client=None,
     return_client=False,
-    host="localhost",
-    port="1729",
     parallelisation=2):
     '''@usage: add a new attribute to all or subset of thingTypes
     @param database: the name of the database. string
@@ -164,6 +188,9 @@ def def_attr_type(
     @param port: the port grakn is running on
     @return None
     '''
+    
+    credential = TypeDBCredential(username=username, password=password, tls_root_ca_path=tls_root_ca_path)
+
     if not thingTypes is None and not rootTypes is None:
         raise ValueError("One and only one of thingTypes or rootTypes must be provided")
     if thingTypes is None and rootTypes is None:
@@ -178,7 +205,10 @@ def def_attr_type(
 
     # get all the types in the schema
     if client is None:
-        client = TypeDB.core_client(address=host+":"+port,parallelisation=parallelisation)
+        client = TypeDB.cluster_client(
+            addresses = addresses,
+            credential = credential,
+            parallelisation=parallelisation)
     with client.session(database, SessionType.SCHEMA) as session:
         with session.transaction(TransactionType.READ) as read_transaction:
             for query_match in list_query_match:
@@ -217,12 +247,14 @@ def def_attr_type(
         client.close
         return None
 
-def get_type_owns(
+def get_type_owns_cluster(
     database,
+    username,
+    password, 
+    tls_root_ca_path,
+    addresses,
     thingType,
     client=None,
-    host="localhost",
-    port="1729",
     parallelisation=2
     ):
     '''@usage get the attribute types owned by thingType
@@ -234,11 +266,15 @@ def get_type_owns(
     @return dict of string {"attr1":valuetype, "attr2":valuetype, ... "@key":"attr1"}
             where the "@key" key returns the name of the key attribute (if it exists)
     '''
+    credential = TypeDBCredential(username=username, password=password, tls_root_ca_path=tls_root_ca_path)
     query_thingType = "match $x type {}; get $x;".format(thingType)
     dict_out = {}
 
     if client is None:
-        client = TypeDB.core_client(address=host+":"+port,parallelisation=parallelisation)
+        client = TypeDB.cluster_client(
+            addresses = addresses,
+            credential = credential,
+            parallelisation=parallelisation)
     with client.session(database, SessionType.SCHEMA) as session:
         with session.transaction(TransactionType.READ) as read_transaction:
             iterator_conceptMap = read_transaction.query().match(query_thingType)
@@ -254,16 +290,18 @@ def get_type_owns(
     return dict_out
 
 
-def def_rel_type(
+def def_rel_type_cluster(
     database,
+    username,
+    password, 
+    tls_root_ca_path,
+    addresses,
     new_rel_label,
     dict_role_players,
     rel_sup="relation",
     verbose=False,
     client=None,
     return_client=False,
-    host="localhost",
-    port="1729",
     parallelisation=2
     ):
     '''@usage: add a new relationtype to the schema
@@ -284,9 +322,12 @@ def def_rel_type(
     @param port: the port grakn is running on
     @return None
     '''
-
+    credential = TypeDBCredential(username=username, password=password, tls_root_ca_path=tls_root_ca_path)
     if client is None:
-        client =  TypeDB.core_client(address=host+":"+port,parallelisation=parallelisation)
+        client =  TypeDB.cluster_client(
+            addresses = addresses,
+            credential = credential,
+            parallelisation=parallelisation)
     with client.session(database, SessionType.SCHEMA) as session:
         # check if any root types included
         for role_label in dict_role_players.keys():
@@ -334,12 +375,14 @@ def def_rel_type(
         client.close
         return None
 
-def get_type_plays(
+def get_type_plays_cluster(
     database,
+    username,
+    password, 
+    tls_root_ca_path,
+    addresses,
     thingType,
     client=None,
-    host="localhost",
-    port="1729",
     parallelisation=2
     ):
     '''@usage get the roles played by thingType
@@ -350,11 +393,15 @@ def get_type_plays(
     @param port: the port grakn is running on
     @return list of string ["rel1:role1", "rel1:role2", "rel2:role3"..]
     '''
+    credential = TypeDBCredential(username=username, password=password, tls_root_ca_path=tls_root_ca_path)
     query_thingType = "match $x type {}; get $x;".format(thingType)
     list_out = []
 
     if client is None:
-        client = TypeDB.core_client(address=host+":"+port,parallelisation=parallelisation)
+        client = TypeDB.cluster_client(
+            addresses = addresses,
+            credential = credential,
+            parallelisation=parallelisation)
     with client.session(database, SessionType.SCHEMA) as session:
         with session.transaction(TransactionType.READ) as read_transaction:
             iterator_conceptMap = read_transaction.query().match(query_thingType)
@@ -371,16 +418,18 @@ def get_type_plays(
     return list_out
 
 
-def insert_data(
+def insert_data_cluster(
     database,
+    username,
+    password, 
+    tls_root_ca_path,
+    addresses,
     gql_data,
     parse_lines=False,
     line_modifier = lambda line: line,
     verbose=False,
     client=None,
     return_client=False,
-    host="localhost",
-    port="1729",
     parallelisation=2):
     '''
     @param database: the database to intialise, string
@@ -393,8 +442,12 @@ def insert_data(
     @param host, the host, string
     @param port, the port, string
     '''
+    credential = TypeDBCredential(username=username, password=password, tls_root_ca_path=tls_root_ca_path)
     if client is None:
-        client = TypeDB.core_client(address=host+":"+port,parallelisation=parallelisation)
+        client = TypeDB.cluster_client(
+            addresses = addresses,
+            credential = credential,
+            parallelisation=parallelisation)
     if parse_lines:
         f = open(gql_data, "r")
         with client.session(database, SessionType.DATA) as session:
@@ -423,16 +476,18 @@ def insert_data(
         return None
 
 
-def ls_instances(
+def ls_instances_cluster(
     database,
+    username,
+    password, 
+    tls_root_ca_path,
+    addresses,
     n=10,
     thingTypes=["entity","relation","attribute"],
     print_attributes = True,
     print_relations = True,
     client=None,
     return_client=False,
-    host="localhost",
-    port="1729",
     parallelisation=2):
     '''@usage print the top n instances of each root type, along with an attribute and a relation.
               useful for getting a peak into the data
@@ -446,7 +501,7 @@ def ls_instances(
     @param host, the host, string
     @param port, the port, string
     '''
-
+    credential = TypeDBCredential(username=username, password=password, tls_root_ca_path=tls_root_ca_path)
     list_query_match = ["match $x isa {}; ".format(thingType) for thingType in thingTypes]
     get_clause = "get $x"
     if print_attributes:
@@ -459,7 +514,10 @@ def ls_instances(
     list_query_match = [query_match + get_clause for query_match in list_query_match]
 
     if client is None:
-        client = TypeDB.core_client(address=host+":"+port,parallelisation=parallelisation)
+        client = TypeDB.cluster_client(
+            addresses = addresses,
+            credential = credential,
+            parallelisation=parallelisation)
     with client.session(database, SessionType.DATA) as session:
         with session.transaction(TransactionType.READ) as read_transaction:
             for i in range(len(list_query_match)):
@@ -503,15 +561,17 @@ def ls_instances(
         return None
 
 
-def modify_each_thing(
+def modify_each_thing_cluster(
     database,
+    username,
+    password, 
+    tls_root_ca_path,
+    addresses,
     query_match = "match $x isa thing; get $x;",
     f_write = lambda write_transaction, iid : None,
     args=None,
     client=None,
     return_client=False,
-    host="localhost",
-    port="1729",
     batch_size=50,
     parallelisation=2):
     '''@usage: iterate over all non-root things matching query, calling thing_modifier.
@@ -530,10 +590,14 @@ def modify_each_thing(
     @param batch_size: number of transactions before each write commit. Recommended <100
     @return None
     '''
+    credential = TypeDBCredential(username=username, password=password, tls_root_ca_path=tls_root_ca_path)
     list_iid = []
     #list_out = []
     if client is None:
-        client = TypeDB.core_client(address=host+":"+port,parallelisation=parallelisation)
+        client = TypeDB.cluster_client(
+            addresses = addresses,
+            credential = credential,
+            parallelisation=parallelisation)
     with client.session(database, SessionType.DATA) as session:
         with session.transaction(TransactionType.READ) as read_transaction:
             iterator_conceptMap = read_transaction.query().match(query_match)

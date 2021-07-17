@@ -42,7 +42,7 @@ python = "^3.7"  # Compatible python versions must be declared here
 # cleo = { git = "https://github.com/sdispater/cleo.git", branch = "master" }
 
 py-dev-utils = {git = "https://github.com/JonThom/py-dev-utils.git"}
-typedb-client = "2.1.0"
+typedb-client = "^2.1.1"
 # Optional dependencies (extras)
 
 
@@ -54,6 +54,7 @@ pytest-cov = "^2.4"
 coverage = {extras = ["toml"], version = "^5.4"}
 
 # coverage
+liccheck = "^0.6.0"
 [tool.coverage.paths]
 source = ["grakn_dev_utils"]
 

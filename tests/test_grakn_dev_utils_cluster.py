@@ -6,16 +6,16 @@ from .fixtures import *
 # variables
 
 # tests
-def test_init_db_1(database_params, db_client_core):
-    assert db_client_core.databases().contains(database_params["database"])
+def test_cluster_init_db_1(database_params, db_client_cluster):
+    assert db_client_cluster.databases().contains(database_params["database"])
 
-def test_init_db_2(database_params, db_client_core):
+def test_cluster_init_db_2(database_params, db_client_cluster):
 
     query_match_entity = "match $x sub entity; get $x;"
     query_match_relation = "match $x sub relation; get $x;"
     query_match_attribute = "match $x sub attribute; get $x;"
 
-    with db_client_core.session(database_params["database"], SessionType.SCHEMA) as session:
+    with db_client_cluster.session(database_params["database"], SessionType.SCHEMA) as session:
         with session.transaction(TransactionType.READ) as read_transaction:
             iterator_conceptMap_entity = read_transaction.query().match(query_match_entity)
             list_concept_entity = [conceptMap_entity.get("x") for conceptMap_entity in iterator_conceptMap_entity]
@@ -29,25 +29,25 @@ def test_init_db_2(database_params, db_client_core):
             assert all([lambda list_concept: len(list_concept)>1, [list_concept_entity, list_concept_relation, list_concept_attribute]])
 
 
-def test_ls_types(database_params, db_client_core):
-    gradevils.ls_types(database_params["database"], client=db_client_core)
+def test_cluster_ls_types(database_params, db_client_cluster):
+    gradevils.ls_types(database_params["database"], client=db_client_cluster)
     assert True
 
-def test_def_attr_type_and_get_type_owns(database_params, db_client_core):
-    gradevils.def_attr_type(database=database_params["database"], new_attr_label = "test_attr", new_attr_value="string", sup_label="attribute", is_key=False, thingTypes=["person"], verbose=True, client=db_client_core)
-    assert all([attr in gradevils.get_type_owns(database_params["database"], thingType = "person", client=db_client_core) for attr in ["test_attr"]])
+def test_cluster_def_attr_type_and_get_type_owns(database_params, db_client_cluster):
+    gradevils.def_attr_type(database=database_params["database"], new_attr_label = "test_cluster_attr", new_attr_value="string", sup_label="attribute", is_key=False, thingTypes=["person"], verbose=True, client=db_client_cluster)
+    assert all([attr in gradevils.get_type_owns(database_params["database"], thingType = "person", client=db_client_cluster) for attr in ["test_cluster_attr"]])
 
 
-def test_def_rel_type(database_params, db_client_core):
-    client = gradevils.def_rel_type(database_params["database"], "association", dict_role_players={"associate":{"role_players":["house","person"], "role_sup":"role"}}, rel_sup="relation", verbose=True, client=db_client_core, return_client = True)
+def test_cluster_def_rel_type(database_params, db_client_cluster):
+    client = gradevils.def_rel_type(database_params["database"], "association", dict_role_players={"associate":{"role_players":["house","person"], "role_sup":"role"}}, rel_sup="relation", verbose=True, client=db_client_cluster, return_client = True)
     client =gradevils.def_rel_type(database_params["database"], "association_sub", dict_role_players={"sub_role":{"role_players":["house","person"], "role_sup":"associate"}}, rel_sup="association", verbose=True, client=client, return_client=True)
 
     person_scoped_roles = gradevils.get_type_plays(database_params["database"], thingType="person", client=client)
     assert any([lambda scoped_role: "associate" in scoped_role,person_scoped_roles]) and any([lambda scoped_role: "sub_role" in scoped_role,person_scoped_roles])
 
 
-def test_insert_data(database_params, db_client_core):
-    client = gradevils.def_attr_type(database_params["database"], new_attr_label = "UID", new_attr_value="string", sup_label="attribute", is_key=False, rootTypes=["entity","relation","attribute"], client=db_client_core, return_client = True)
+def test_cluster_insert_data(database_params, db_client_cluster):
+    client = gradevils.def_attr_type(database_params["database"], new_attr_label = "UID", new_attr_value="string", sup_label="attribute", is_key=False, rootTypes=["entity","relation","attribute"], client=db_client_cluster, return_client = True)
 
     def add_UID_to_each_insert_query(line):
         line_modified = line.rstrip("; \n") + ", has UID "
@@ -73,17 +73,17 @@ def test_insert_data(database_params, db_client_core):
             assert all([lambda list_concept: len(list_concept)>1, [list_concept_entity, list_concept_entity_attr_val, list_concept_relation]])
 
 
-def test_ls_instances(database_params, db_client_core):
-    client = gradevils.insert_data(database_params["database"], database_params["gql_data"], parse_lines=True, client=db_client_core, return_client = True)
+def test_cluster_ls_instances(database_params, db_client_cluster):
+    client = gradevils.insert_data(database_params["database"], database_params["gql_data"], parse_lines=True, client=db_client_cluster, return_client = True)
     gradevils.ls_instances(database_params["database"], client=client)
     assert True
 
 
-def test_modify_each_thing(database_params, db_client_core):
+def test_cluster_modify_each_thing(database_params, db_client_cluster):
     new_attr_label = "identifier"
-    db_client_core = gradevils.insert_data(database_params["database"], database_params["gql_data"], parse_lines=True, client=db_client_core, return_client = True)
+    db_client_cluster = gradevils.insert_data(database_params["database"], database_params["gql_data"], parse_lines=True, client=db_client_cluster, return_client = True)
     # modify schema: add new attribute to person entitytype
-    db_client_core = gradevils.def_attr_type(
+    db_client_cluster = gradevils.def_attr_type(
         database = database_params["database"],
         new_attr_label=new_attr_label,
         new_attr_value="string",
@@ -92,7 +92,7 @@ def test_modify_each_thing(database_params, db_client_core):
         thingTypes = ["person","house"],
         rootTypes = None,
         verbose=False,
-        client=db_client_core,
+        client=db_client_cluster,
         return_client=True,
         host="localhost",
         port="1729",
@@ -106,19 +106,19 @@ def test_modify_each_thing(database_params, db_client_core):
         write_transaction.query().insert(query)
         return None
 
-    db_client_core = gradevils.modify_each_thing(
+    db_client_cluster = gradevils.modify_each_thing(
         database = database_params["database"],
         query_match = query_match,
         f_write = f_write_test,
         args=[new_attr_label],
         host=database_params["host"],
         port=database_params["port"],
-        client=db_client_core,
+        client=db_client_cluster,
         return_client=True,
         batch_size=2)
 
     # verify that the instances have been changes
-    with db_client_core.session(database_params["database"], SessionType.DATA) as session:
+    with db_client_cluster.session(database_params["database"], SessionType.DATA) as session:
         with session.transaction(TransactionType.READ) as read_transaction:
             iterator_conceptMap = read_transaction.query().match("match $x isa person, has identifier $y; get $y; ")
             list_dict_concept = [conceptMap.map() for conceptMap in iterator_conceptMap]
