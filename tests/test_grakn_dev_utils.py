@@ -3,9 +3,6 @@ from typedb.client import *
 import uuid
 from .fixtures import *
 
-# variables
-
-# tests
 def test_init_db_1(database_params, db_client_core):
     assert db_client_core.databases().contains(database_params["database"])
 
@@ -79,7 +76,7 @@ def test_ls_instances(database_params, db_client_core):
     assert True
 
 
-def test_modify_each_thing(database_params, db_client_core):
+def test_modify_each_concept_1(database_params, db_client_core):
     new_attr_label = "identifier"
     db_client_core = gradevils.insert_data(database_params["database"], database_params["gql_data"], parse_lines=True, client=db_client_core, return_client = True)
     # modify schema: add new attribute to person entitytype
@@ -106,7 +103,7 @@ def test_modify_each_thing(database_params, db_client_core):
         write_transaction.query().insert(query)
         return None
 
-    db_client_core = gradevils.modify_each_thing(
+    db_client_core = gradevils.modify_each_concept(
         database = database_params["database"],
         query_match = query_match,
         f_write = f_write_test,

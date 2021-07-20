@@ -5,23 +5,44 @@ import py_dev_utils
 
 def del_db(
     database,
-    verbose=False,
-    client=None,
-    return_client=False,
+    cluster = False,
     host="localhost",
     port="1729",
-    parallelisation=2):
+    username="admin",
+    password="password", 
+    tls_root_ca_path=None,
+    addresses=[],
+    client=None,
+    return_client=False,
+    parallelisation=2,
+    verbose=False
+    ):
     '''@usage delete a grakn database
-    @param database: the database to delete, string
-    @param verbose: whether to print databases after deletion, bool
+    @param database the database to delete, string
+    @param cluster: boolean, whether it is typedb cluster
+    @param host the host for typedb core, string
+    @param port the port for typedb core, string
+    @param username for typedb cluster
+    @param password for typedb cluster
+    @param tls_root_ca_path full path to typedb cluster server/conf/encryption/rpc-root-ca.pem 
+    @param addresses: list of string, each in the form "host:port" 
     @param client: an active grakn client
     @param return_client: return grakn client, if not, client is closed
-    @param host, the host, string
-    @param port, the port, string
+    @param verbose: whether to print databases after deletion, bool
     @return None
     '''
     if client is None:
-        client = TypeDB.core_client(address=host+":"+port, parallelisation=parallelisation)
+        if cluster: 
+            credential = TypeDBCredential(
+                username=username, 
+                password=password, 
+                tls_root_ca_path=tls_root_ca_path)
+            TypeDB.cluster_client(
+            addresses = addresses,
+            credential = credential,
+            parallelisation=parallelisation)
+        else:
+            client = TypeDB.core_client(address=host+":"+port, parallelisation=parallelisation)
     if client.databases().contains(database):
         client.databases().get(database).delete()
     else:
@@ -39,26 +60,49 @@ def del_db(
 
 def init_db(
     database,
-    gql_schema=None,
-    parse_lines=False,
-    verbose=False,
-    client=None,
-    return_client=False,
+    cluster = False,
     host="localhost",
     port="1729",
-    parallelisation=2):
+    username="admin",
+    password="password", 
+    tls_root_ca_path=None,
+    addresses=[],
+    gql_schema=None,
+    parse_lines=False,
+    client=None,
+    return_client=False,
+    parallelisation=2,
+    verbose=False
+    ):
     '''
     @param database: the database to intialise, string
-    @param gql_schema: path to schema, string
-    @param parse_lines: whether to parse gql_schema line-by-line or as a whole. Bool, default False
-    @param verbose: if True, print the define queries
-    @param client: an active grakn client
-    @param return_client: return grakn client, if not, client is closed
+    @param cluster: boolean, whether it is typedb cluster
     @param host, the host, string
     @param port, the port, string
+    @param username for typedb cluster
+    @param password for typedb cluster
+    @param tls_root_ca_path full path to typedb cluster server/conf/encryption/rpc-root-ca.pem 
+    @param addresses: list of string, each in the form "host:port" 
+    @param gql_schema: path to schema, string
+    @param parse_lines: whether to parse gql_schema line-by-line or as a whole. Bool, default False
+    @param client: an active grakn client
+    @param return_client: return grakn client, if not, client is closed
+    @param parallelisation: passed to TypeDB client
+    @param verbose: if True, print the define queries
+    @return None 
     '''
     if client is None:
-        client = TypeDB.core_client(address=host+":"+port, parallelisation=parallelisation)
+        if cluster: 
+            credential = TypeDBCredential(
+                username=username, 
+                password=password, 
+                tls_root_ca_path=tls_root_ca_path)
+            TypeDB.cluster_client(
+            addresses = addresses,
+            credential = credential,
+            parallelisation=parallelisation)
+        else:
+            client = TypeDB.core_client(address=host+":"+port, parallelisation=parallelisation)
     client.databases().create(database)
     if not gql_schema is None:
         if parse_lines:
@@ -93,27 +137,48 @@ def init_db(
 
 def ls_types(
     database,
+    cluster=False,
+    host="localhost",
+    port="1729",
+    username="admin",
+    password="password", 
+    tls_root_ca_path=None,
+    addresses=[],
     n=float("inf"),
     rootTypes=["entity","relation","attribute"],
     client=None,
     return_client=False,
-    host="localhost",
-    port="1729",
-    parallelisation=2):
+    parallelisation=2
+    ):
     '''@usage print the types in a schema. Useful for getting a peak into the schema.
     @param database: the database to intialise, string
+    @param cluster: boolean, whether it is typedb cluster
+    @param host, the host, string
+    @param port, the port, string
+    @param username for typedb cluster
+    @param password for typedb cluster
+    @param tls_root_ca_path full path to typedb cluster server/conf/encryption/rpc-root-ca.pem 
+    @param addresses: list of string, each in the form "host:port" 
     @param n: the max number of each root type to print, default all
     @param rootTypes: the root types for which to print subtypes
     @param client: an active grakn client
     @param return_client: return grakn client, if not, client is closed
-    @param host, the host, string
-    @param port, the port, string
     '''
 
     list_query_match = ["match $x sub {}; get $x;".format(rootType) for rootType in rootTypes]
 
     if client is None:
-        client = TypeDB.core_client(address=host+":"+port, parallelisation=parallelisation)
+        if cluster: 
+            credential = TypeDBCredential(
+                username=username, 
+                password=password, 
+                tls_root_ca_path=tls_root_ca_path)
+            TypeDB.cluster_client(
+                addresses = addresses,
+                credential = credential,
+                parallelisation=parallelisation)
+        else:
+            client = TypeDB.core_client(address=host+":"+port, parallelisation=parallelisation)
     with client.session(database, SessionType.SCHEMA) as session:
         with session.transaction(TransactionType.READ) as read_transaction:
             for i in range(len(list_query_match)):
@@ -135,10 +200,18 @@ def ls_types(
         client.close
         return None
 
+
 def def_attr_type(
     database,
     new_attr_label,
     new_attr_value,
+    cluster=False,
+    host="localhost",
+    port="1729",
+    username="admin",
+    password="password", 
+    tls_root_ca_path=None,
+    addresses=[],
     sup_label="attribute",
     is_key=False,
     thingTypes = None,
@@ -146,13 +219,18 @@ def def_attr_type(
     verbose=False,
     client=None,
     return_client=False,
-    host="localhost",
-    port="1729",
     parallelisation=2):
     '''@usage: add a new attribute to all or subset of thingTypes
     @param database: the name of the database. string
     @param new_attr_label: the label of the new attribute. string
     @param new_attr_value: the value type of the new attribute, one of "long", "double", "string", "boolean" or "datetime". string
+    @param cluster: boolean, whether it is typedb cluster
+    @param host, the host, string
+    @param port, the port, string
+    @param username for typedb cluster
+    @param password for typedb cluster
+    @param tls_root_ca_path full path to typedb cluster server/conf/encryption/rpc-root-ca.pem 
+    @param addresses: list of string, each in the form "host:port" 
     @param sup_label: the attribute supertype  which the new attributetype will inherit
     @param is_key: is the attribute a key, bool
     @param thingTypes: list of thingTypes which, with their subtypes, will own the attribute. if rootTypes is provided will be ignored
@@ -160,8 +238,6 @@ def def_attr_type(
     @param verbose: if True, print the define queries
     @param client: an active grakn client
     @param return_client: return grakn client, if not, client is closed
-    @param host: the host grakn is running on
-    @param port: the port grakn is running on
     @return None
     '''
     if not thingTypes is None and not rootTypes is None:
@@ -178,7 +254,19 @@ def def_attr_type(
 
     # get all the types in the schema
     if client is None:
-        client = TypeDB.core_client(address=host+":"+port,parallelisation=parallelisation)
+        if cluster: 
+            credential = TypeDBCredential(
+                username=username, 
+                password=password, 
+                tls_root_ca_path=tls_root_ca_path)
+            TypeDB.cluster_client(
+                addresses = addresses,
+                credential = credential,
+                parallelisation=parallelisation)
+        else:
+            client = TypeDB.core_client(
+                address=host+":"+port, 
+                parallelisation=parallelisation)
     with client.session(database, SessionType.SCHEMA) as session:
         with session.transaction(TransactionType.READ) as read_transaction:
             for query_match in list_query_match:
@@ -217,28 +305,50 @@ def def_attr_type(
         client.close
         return None
 
+
 def get_type_owns(
     database,
     thingType,
-    client=None,
+    cluster=False,
     host="localhost",
     port="1729",
+    username="admin",
+    password="password", 
+    tls_root_ca_path=None,
+    addresses=[],
+    client=None,
     parallelisation=2
     ):
     '''@usage get the attribute types owned by thingType
     @param database: the database, string
     @param thingType: the thingType for which to retrieve attributes, string
+    @param cluster: boolean, whether it is typedb cluster
+    @param host, the host, string
+    @param port, the port, string
+    @param username for typedb cluster
+    @param password for typedb cluster
+    @param tls_root_ca_path full path to typedb cluster server/conf/encryption/rpc-root-ca.pem 
     @param client: an active grakn client
-    @param host: the host grakn is running on
-    @param port: the port grakn is running on
     @return dict of string {"attr1":valuetype, "attr2":valuetype, ... "@key":"attr1"}
             where the "@key" key returns the name of the key attribute (if it exists)
     '''
+    
     query_thingType = "match $x type {}; get $x;".format(thingType)
     dict_out = {}
 
-    if client is None:
-        client = TypeDB.core_client(address=host+":"+port,parallelisation=parallelisation)
+    if cluster: 
+        credential = TypeDBCredential(
+            username=username, 
+            password=password, 
+            tls_root_ca_path=tls_root_ca_path)
+        TypeDB.cluster_client(
+            addresses = addresses,
+            credential = credential,
+            parallelisation=parallelisation)
+    else:
+        client = TypeDB.core_client(
+            address=host+":"+port, 
+            parallelisation=parallelisation)
     with client.session(database, SessionType.SCHEMA) as session:
         with session.transaction(TransactionType.READ) as read_transaction:
             iterator_conceptMap = read_transaction.query().match(query_thingType)
@@ -258,12 +368,17 @@ def def_rel_type(
     database,
     new_rel_label,
     dict_role_players,
+    cluster=False,
+    host="localhost",
+    port="1729",
+    username="admin",
+    password="password", 
+    tls_root_ca_path=None,
+    addresses=[],
     rel_sup="relation",
     verbose=False,
     client=None,
     return_client=False,
-    host="localhost",
-    port="1729",
     parallelisation=2
     ):
     '''@usage: add a new relationtype to the schema
@@ -276,17 +391,32 @@ def def_rel_type(
                     "role_players": array of role_player types (string)
                     "role_sup": role supertype label ("role" if inheriting from root Role)
            to make a role applicable to all descendents of one or more root types, provide one or more of the root type(s) ["entity", "relation", "attribute"]
+    @param cluster: boolean, whether it is typedb cluster
+    @param host, the host, string
+    @param port, the port, string
+    @param username for typedb cluster
+    @param password for typedb cluster
+    @param tls_root_ca_path full path to typedb cluster server/conf/encryption/rpc-root-ca.pem 
     @param rel_sup: the supertype form which the new relationtype will inherit
     @param verbose: if True, print the define queries
     @param client: an active grakn client
     @param return_client: return grakn client, if not, client is closed
-    @param host: the host grakn is running on
-    @param port: the port grakn is running on
     @return None
     '''
 
-    if client is None:
-        client =  TypeDB.core_client(address=host+":"+port,parallelisation=parallelisation)
+    if cluster: 
+        credential = TypeDBCredential(
+            username=username, 
+            password=password, 
+            tls_root_ca_path=tls_root_ca_path)
+        TypeDB.cluster_client(
+            addresses = addresses,
+            credential = credential,
+            parallelisation=parallelisation)
+    else:
+        client = TypeDB.core_client(
+            address=host+":"+port, 
+            parallelisation=parallelisation)
     with client.session(database, SessionType.SCHEMA) as session:
         # check if any root types included
         for role_label in dict_role_players.keys():
@@ -337,24 +467,46 @@ def def_rel_type(
 def get_type_plays(
     database,
     thingType,
-    client=None,
+    cluster=False,
     host="localhost",
     port="1729",
+    username="admin",
+    password="password", 
+    tls_root_ca_path=None,
+    addresses=[],
+    client=None,
     parallelisation=2
     ):
     '''@usage get the roles played by thingType
     @param database: the database, string
     @param thingType: the thingType for which to retrieve attributes, string
+    @param cluster: boolean, whether it is typedb cluster
+    @param host, the host, string
+    @param port, the port, string
+    @param username for typedb cluster
+    @param password for typedb cluster
+    @param tls_root_ca_path full path to typedb cluster server/conf/encryption/rpc-root-ca.pem 
+    @param addresses: list of string, each in the form "host:port" 
     @param client: an active grakn client
-    @param host: the host grakn is running on
-    @param port: the port grakn is running on
     @return list of string ["rel1:role1", "rel1:role2", "rel2:role3"..]
     '''
     query_thingType = "match $x type {}; get $x;".format(thingType)
     list_out = []
 
-    if client is None:
-        client = TypeDB.core_client(address=host+":"+port,parallelisation=parallelisation)
+
+    if cluster: 
+        credential = TypeDBCredential(
+            username=username, 
+            password=password, 
+            tls_root_ca_path=tls_root_ca_path)
+        TypeDB.cluster_client(
+            addresses = addresses,
+            credential = credential,
+            parallelisation=parallelisation)
+    else:
+        client = TypeDB.core_client(
+            address=host+":"+port, 
+            parallelisation=parallelisation)
     with client.session(database, SessionType.SCHEMA) as session:
         with session.transaction(TransactionType.READ) as read_transaction:
             iterator_conceptMap = read_transaction.query().match(query_thingType)
@@ -374,27 +526,49 @@ def get_type_plays(
 def insert_data(
     database,
     gql_data,
+    cluster=False,
+    host="localhost",
+    port="1729",
+    username="admin",
+    password="password", 
+    tls_root_ca_path=None,
+    addresses=[],
     parse_lines=False,
     line_modifier = lambda line: line,
     verbose=False,
     client=None,
     return_client=False,
-    host="localhost",
-    port="1729",
     parallelisation=2):
     '''
     @param database: the database to intialise, string
     @param gql_data: path to data, string
+    @param cluster: boolean, whether it is typedb cluster
+    @param host, the host, string
+    @param port, the port, string
+    @param username for typedb cluster
+    @param password for typedb cluster
+    @param tls_root_ca_path full path to typedb cluster server/conf/encryption/rpc-root-ca.pem 
+    @param addresses: list of string, each in the form "host:port" 
     @param parse_lines: whether to parse gql_data line-by-line or as a whole. bool, default False
     @param verbose: if True, print the insert queries
     @param line_modifier: if parse_lines, optionally pre-process each line using a provided function that takes a string input and returns the modified line.
     @param client: an active grakn client
     @param return_client: return grakn client, if not, client is closed
-    @param host, the host, string
-    @param port, the port, string
     '''
-    if client is None:
-        client = TypeDB.core_client(address=host+":"+port,parallelisation=parallelisation)
+
+    if cluster: 
+        credential = TypeDBCredential(
+            username=username, 
+            password=password, 
+            tls_root_ca_path=tls_root_ca_path)
+        TypeDB.cluster_client(
+            addresses = addresses,
+            credential = credential,
+            parallelisation=parallelisation)
+    else:
+        client = TypeDB.core_client(
+            address=host+":"+port, 
+            parallelisation=parallelisation)
     if parse_lines:
         f = open(gql_data, "r")
         with client.session(database, SessionType.DATA) as session:
@@ -425,26 +599,36 @@ def insert_data(
 
 def ls_instances(
     database,
+    cluster=False,
+    host="localhost",
+    port="1729",
+    username="admin",
+    password="password", 
+    tls_root_ca_path=None,
+    addresses=[],
     n=10,
     thingTypes=["entity","relation","attribute"],
     print_attributes = True,
     print_relations = True,
     client=None,
     return_client=False,
-    host="localhost",
-    port="1729",
     parallelisation=2):
     '''@usage print the top n instances of each root type, along with an attribute and a relation.
               useful for getting a peak into the data
     @param database: the database to intialise, string
+    @param cluster: boolean, whether it is typedb cluster
+    @param host, the host, string
+    @param port, the port, string
+    @param username for typedb cluster
+    @param password for typedb cluster
+    @param tls_root_ca_path full path to typedb cluster server/conf/encryption/rpc-root-ca.pem 
+    @param addresses: list of string, each in the form "host:port" 
     @param n: the max number of each type to print, default all
     @param thingTypes: the types for which to print subtypes
     @param print_attributes: print the attributes owned by the type, if any
     @param print_relations: print the relations in which instance plays a role, if any
     @param client: an active grakn client
     @param return_client: return grakn client, if not, client is closed
-    @param host, the host, string
-    @param port, the port, string
     '''
 
     list_query_match = ["match $x isa {}; ".format(thingType) for thingType in thingTypes]
@@ -458,8 +642,20 @@ def ls_instances(
     get_clause += ";"
     list_query_match = [query_match + get_clause for query_match in list_query_match]
 
-    if client is None:
-        client = TypeDB.core_client(address=host+":"+port,parallelisation=parallelisation)
+
+    if cluster: 
+        credential = TypeDBCredential(
+            username=username, 
+            password=password, 
+            tls_root_ca_path=tls_root_ca_path)
+        TypeDB.cluster_client(
+            addresses = addresses,
+            credential = credential,
+            parallelisation=parallelisation)
+    else:
+        client = TypeDB.core_client(
+            address=host+":"+port, 
+            parallelisation=parallelisation)
     with client.session(database, SessionType.DATA) as session:
         with session.transaction(TransactionType.READ) as read_transaction:
             for i in range(len(list_query_match)):
@@ -503,38 +699,66 @@ def ls_instances(
         return None
 
 
-def modify_each_thing(
+def modify_each_concept(
     database,
+    cluster=False,
+    host="localhost",
+    port="1729",
+    username="admin",
+    password="password", 
+    tls_root_ca_path=None,
+    addresses=[],
+    session_type = "DATA",
     query_match = "match $x isa thing; get $x;",
     f_write = lambda write_transaction, iid : None,
     args=None,
     client=None,
     return_client=False,
-    host="localhost",
-    port="1729",
     batch_size=50,
     parallelisation=2):
-    '''@usage: iterate over all non-root things matching query, calling thing_modifier.
-            This makes it possibly to modify things individually, e.g. to assign a unique identifier to each thing.
+    '''@usage: iterate over all non-root concepts matching query, calling f_write.
+            This makes it possibly to modify concepts individually, e.g. to assign ownership of a new attribute to 
+            some concepts, or assign a unique identifier to each thing.
     @param database: the name of the database. string
-    @param query_match: a data match query to retrieve all things  which are to be modified. The things must be bound to $x.
-                        If no matches a found, a message is printed
+    @param cluster: boolean, whether it is typedb cluster
+    @param host, the host, string
+    @param port, the port, string
+    @param username for typedb cluster
+    @param password for typedb cluster
+    @param tls_root_ca_path full path to typedb cluster server/conf/encryption/rpc-root-ca.pem 
+    @param addresses: list of string, each in the form "host:port" 
+    @param session_type: one of "SCHEMA" or "DATA" 
+    @param query_match: a data match query to retrieve all concepts to be modified. The concepts must be bound to $x.
+                        If no matches a found, a message (but no error) is printed
     @param f_write: a function that takes a write transaction and an iid as first and second argument.
                 Additional positional arguments can be passed through args.
                 The function should NOT commit changes, as this is done in batches.
-    @param args: a list of additional positional arguments to pass to thing_modifier after thing
-    @param client: an active grakn client
-    @param return_client: return grakn client, if not, client is closed
-    @param host: the host on which typedb is running
-    @param port: the port on the host on which typedb is running
+    @param args: a list of additional positional arguments to pass to f_write
+    @param client: an active TypeDB client
+    @param return_client: return TypeDB client, if not, client is closed
     @param batch_size: number of transactions before each write commit. Recommended <100
+    @param parallellisation: passed to TypeDB client
     @return None
     '''
+    if not session_type in ["SCHEMA", "DATA"]:
+        raise ValueError('session_type must be one of "SCHEMA" or "DATA"')
     list_iid = []
     #list_out = []
-    if client is None:
-        client = TypeDB.core_client(address=host+":"+port,parallelisation=parallelisation)
-    with client.session(database, SessionType.DATA) as session:
+
+    if cluster: 
+        credential = TypeDBCredential(
+            username=username, 
+            password=password, 
+            tls_root_ca_path=tls_root_ca_path)
+        TypeDB.cluster_client(
+            addresses = addresses,
+            credential = credential,
+            parallelisation=parallelisation)
+    else:
+        client = TypeDB.core_client(
+            address=host+":"+port, 
+            parallelisation=parallelisation)
+    with client.session(database, SessionType.DATA if session_type == "DATA" else SessionType.SCHEMA) as session:
         with session.transaction(TransactionType.READ) as read_transaction:
             iterator_conceptMap = read_transaction.query().match(query_match)
             iterator_conceptMap = py_dev_utils.check_whether_iterator_empty(iterator_conceptMap)
@@ -546,16 +770,16 @@ def modify_each_thing(
             k = 1
             write_transaction = session.transaction(TransactionType.WRITE)
             for iid in list_iid:
-                f_write(write_transaction, iid, *args) if args else thing_modifier(write_transaction,iid)
+                f_write(write_transaction, iid, *args) if args else f_write(write_transaction,iid)
                 if k%batch_size == 0:
-                    print(f"inserts: {k}")
+                    print(f"write transactions: {k}")
                     write_transaction.commit()
                     write_transaction = session.transaction(TransactionType.WRITE)
                 k+=1
             if write_transaction.is_open():
                 write_transaction.commit()
         else:
-            print("no things were returned by query_match")
+            print("no concepts were returned by query_match")
         # session closes
     if not return_client:
         client.close
