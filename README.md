@@ -1,6 +1,6 @@
-# grakn_dev_utils
+# typedb_dev_utils
 
-A library of utilities to speed up grakn development with the grakn python API, including setting up and taking down databases from within Python.
+A library of utilities to speed up typedb development with the typedb python API, including setting up and taking down databases from within Python.
 
 
 * print types or instances
@@ -13,27 +13,27 @@ A library of utilities to speed up grakn development with the grakn python API, 
 with pip:
 
 ```
-python -m pip install git+https://github.com/JonThom/grakn-dev-utils
+python -m pip install git+https://github.com/JonThom/typedb-dev-utils
 ```
 
 with pipenv:
 
 ```
-pipenv install git+https://github.com/JonThom/grakn-dev-utils#egg=grakn_dev_utils
+pipenv install git+https://github.com/JonThom/typedb-dev-utils#egg=typedb_dev_utils
 ```
 
 use poetry to add to dependencies:
 
 ```
-poetry add git+https://github.com/JonThom/grakn-dev-utils.git
+poetry add git+https://github.com/JonThom/typedb-dev-utils.git
 ```
 
 ### run
 
-first, make sure grakn 2.0 is installed and running. 
+first, make sure typedb 2.0 is installed and running. 
 
 ```
-import grakn_dev_utils as gradevils
+import typedb_dev_utils as gradevils
 ```
 
 initialise a database and define a schema by reading a gql file line by line

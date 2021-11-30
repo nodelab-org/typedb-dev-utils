@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "grakn_dev_utils"
+name = "typedb_dev_utils"
 version = "0.1.0"
 description = "functions for generating and deleting TypeDB databases"
 
@@ -16,18 +16,18 @@ maintainers = [
 
 readme = 'README.md'  # Markdown files are supported
 
-repository = "https://github.com/JonThom/grakn-dev-utils"
-homepage = "https://github.com/JonThom/grakn-dev-utils"
+repository = "https://github.com/JonThom/typedb-dev-utils"
+homepage = "https://github.com/JonThom/typedb-dev-utils"
 
 keywords = ['TypeDB', 'database', 'API']
 
 packages = [
-    { include = "grakn_dev_utils/*.py" },
+    { include = "typedb_dev_utils/*.py" },
 ]
 
 include = [
     { path = "tests", format = "sdist" },
-    { path = "grakn_dev_utils/data/*", format = "wheel" },
+    { path = "typedb_dev_utils/data/*", format = "wheel" },
 ]
 
 [tool.poetry.dependencies]
@@ -42,7 +42,7 @@ python = "^3.7"  # Compatible python versions must be declared here
 # cleo = { git = "https://github.com/sdispater/cleo.git", branch = "master" }
 
 py-dev-utils = {git = "https://github.com/JonThom/py-dev-utils.git"}
-typedb-client = "^2.1.1"
+typedb-client = "^2.5.0"
 # Optional dependencies (extras)
 
 
@@ -56,7 +56,7 @@ coverage = {extras = ["toml"], version = "^5.4"}
 # coverage
 liccheck = "^0.6.0"
 [tool.coverage.paths]
-source = ["grakn_dev_utils"]
+source = ["typedb_dev_utils"]
 
 [tool.coverage.report]
 show_missing = true

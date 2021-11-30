@@ -1,4 +1,4 @@
-import grakn_dev_utils as gradevils
+import typedb_dev_utils as gradevils
 from typedb.client import *
 import uuid
 from .fixtures import *

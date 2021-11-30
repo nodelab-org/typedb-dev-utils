@@ -211,7 +211,7 @@ python-versions = ">=2.6, !=3.0.*, !=3.1.*, !=3.2.*"
 
 [[package]]
 name = "typedb-client"
-version = "2.2.0"
+version = "2.5.0"
 description = "TypeDB Client for Python"
 category = "main"
 optional = false
@@ -220,11 +220,11 @@ python-versions = "*"
 [package.dependencies]
 grpcio = "1.38.0"
 protobuf = "3.15.5"
-typedb-protocol = "2.2.0"
+typedb-protocol = "2.5.0"
 
 [[package]]
 name = "typedb-protocol"
-version = "2.2.0"
+version = "2.5.0"
 description = "TypeDB Protocol"
 category = "main"
 optional = false
@@ -253,7 +253,7 @@ testing = ["pytest (>=3.5,!=3.7.3)", "pytest-checkdocs (>=1.2.3)", "pytest-flake
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"  # Compatible python versions must be declared here
-content-hash = "c68d457d9b7f73cc4ce9f75a3fa1d029f14e44c4c5cda0de2d58495c95d04532"
+content-hash = "0851a23b6228d1e68ce0ab25d969d4e5dec541c33a6523faabaa3d2c03237e4c"
 
 [metadata.files]
 atomicwrites = [
@@ -440,10 +440,10 @@ toml = [
     {file = "toml-0.10.2.tar.gz", hash = "sha256:b3bda1d108d5dd99f4a20d24d9c348e91c4db7ab1b749200bded2f839ccbe68f"},
 ]
 typedb-client = [
-    {file = "typedb-client-2.2.0.tar.gz", hash = "sha256:ad2f8ecd0a8c55d9788359c1d82cddf90dd482a7ba6a612c288b16b9b0e7becf"},
+    {file = "typedb-client-2.5.0.tar.gz", hash = "sha256:aeeca99be3a323584284af470b30a6ff36de177e46aed99377ebdb7157f08658"},
 ]
 typedb-protocol = [
-    {file = "typedb-protocol-2.2.0.tar.gz", hash = "sha256:ea59faf83d7aad80eb845b429c10d93fa922f9bd64009efdd585e17d16984972"},
+    {file = "typedb-protocol-2.5.0.tar.gz", hash = "sha256:27cef9221a680640d7e29db5014f0593193dd6d09dcbc4c6758b8993a58bb980"},
 ]
 typing-extensions = [
     {file = "typing_extensions-3.7.4.3-py2-none-any.whl", hash = "sha256:dafc7639cde7f1b6e1acc0f457842a83e722ccca8eef5270af2d74792619a89f"},
